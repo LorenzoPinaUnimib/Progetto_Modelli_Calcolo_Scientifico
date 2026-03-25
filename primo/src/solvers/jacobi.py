@@ -1,24 +1,36 @@
 import numpy as np
+import scipy.sparse as sp
 import time
 
-def solve(A, b, tol, max_iter=20000):
-    """Metodo di Jacobi vettorizzato per matrici sparse."""
-    n = A.shape[0]
-    x = np.zeros(n)
+def solve(A, b, tol, nmax=20000):
+    M, N = A.shape
     
-    # Estrazione della diagonale
-    D = A.diagonal()
-    norm_b = np.linalg.norm(b)
+    if M != N:
+        print("Matrix A is not a square matrix")
+        return None, 0, 0, 1
+        
+    D_diag = A.diagonal()
+    if np.any(D_diag == 0):
+        print("At least a diagonal entry is non-zero. The method automatically fails")
+        return None, 0, 0, 1
+
+    # extract needed matrices
+    D = sp.diags(D_diag)
+    B = D - A
+    xold = np.zeros(M)
+    xnew = xold + 1.0
+    nit = 0
+
+    start_time = time.perf_counter()
     
-    start_t = time.perf_counter()
-    for k in range(max_iter):
-        r = b - A @ x
+    # norm(..., inf) equivale a np.linalg.norm(..., np.inf)
+    while np.linalg.norm(xnew - xold, np.inf) > tol and nit < nmax:
+        xold = xnew.copy()
+        # xnew = inv(D) * (B*xold + b) in formato array:
+        xnew = (B @ xold + b) / D_diag
+        nit += 1
         
-        # Controllo convergenza
-        if np.linalg.norm(r) / norm_b < tol:
-            return x, k, time.perf_counter() - start_t
-            
-        # Aggiornamento
-        x = x + r / D
-        
-    return x, max_iter, time.perf_counter() - start_t
+    elapsed_time = time.perf_counter() - start_time
+    err = np.linalg.norm(xnew - xold, np.inf) / np.linalg.norm(xnew, np.inf)
+    
+    return xnew, nit, elapsed_time

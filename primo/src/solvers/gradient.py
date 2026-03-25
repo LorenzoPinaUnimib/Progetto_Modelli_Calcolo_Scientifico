@@ -1,21 +1,36 @@
 import numpy as np
 import time
 
-def solve(A, b, tol, max_iter=20000):
-    """Metodo del Gradiente (Steepest Descent)."""
-    n = A.shape[0]
-    x = np.zeros(n)
-    r = b - A @ x
-    norm_b = np.linalg.norm(b)
+def solve(A, b, tol, nmax=20000):
+    M, N = A.shape
     
-    start_t = time.perf_counter()
-    for k in range(max_iter):
-        if np.linalg.norm(r) / norm_b < tol:
-            return x, k, time.perf_counter() - start_t
-            
-        Ar = A @ r
-        alpha = np.dot(r, r) / np.dot(r, Ar)
-        x = x + alpha * r
-        r = r - alpha * Ar # Aggiornamento efficiente del residuo
+    if M != N:
+        print("Matrix A is not a square matrix")
+        return None, 0, 0, 1
         
-    return x, max_iter, time.perf_counter() - start_t
+    # Nota: la verifica degli autovalori (eig) su matrici sparse giganti bloccherebbe il PC.
+    # Evitiamo di inserire il calcolo esplicito di eig(A) qui.
+
+    nit = 0
+    err = 1.0
+    xold = np.zeros(M)
+
+    start_time = time.perf_counter()
+    
+    while nit < nmax and err > tol:
+        residual = b - A @ xold
+        
+        # step = (residual'*residual)/(residual'*A*residual)
+        A_res = A @ residual
+        step = np.dot(residual, residual) / np.dot(residual, A_res)
+        
+        xnew = xold + step * residual
+        
+        # err = norm(b - A*xnew)/norm(xnew)
+        err = np.linalg.norm(b - A @ xnew) / np.linalg.norm(xnew)
+        xold = xnew
+        nit += 1
+        
+    elapsed_time = time.perf_counter() - start_time
+    
+    return xnew, nit, elapsed_time

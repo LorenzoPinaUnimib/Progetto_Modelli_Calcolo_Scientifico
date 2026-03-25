@@ -1,36 +1,37 @@
 import numpy as np
+import scipy.sparse as sp
+from scipy.sparse.linalg import spsolve_triangular
 import time
 
-def solve(A, b, tol, max_iter=20000):
-    """Metodo di Gauss-Seidel sfruttando la struttura CSR."""
-    n = A.shape[0]
-    x = np.zeros(n)
+def solve(A, b, tol, nmax=20000):
+    M, N = A.shape
     
-    norm_b = np.linalg.norm(b)
-    D = A.diagonal()
+    if M != N:
+        print("Matrix A is not a square matrix")
+        return None, 0, 0, 1
+
+    # extract needed matrices
+    # Formato csr richiesto per l'efficienza
+    L = sp.tril(A, format='csr') 
+    B = A - L
     
-    # Puntatori diretti alla struttura sparsa per massima velocità
-    indptr = A.indptr
-    indices = A.indices
-    data = A.data
+    xold = np.zeros(M)
+    xnew = xold + 1.0
+    nit = 0
+
+    start_time = time.perf_counter()
     
-    start_t = time.perf_counter()
-    for k in range(max_iter):
-        # Calcolo del residuo per il controllo di convergenza
-        # Nota: calcolarlo ad ogni iterazione è costoso, ma richiesto dal criterio
-        r = b - A @ x
-        if np.linalg.norm(r) / norm_b < tol:
-            return x, k, time.perf_counter() - start_t
-            
-        # Ciclo di aggiornamento componente per componente
-        for i in range(n):
-            start_idx = indptr[i]
-            end_idx = indptr[i+1]
-            
-            # Prodotto scalare della i-esima riga di A con x
-            ax_i = np.dot(data[start_idx:end_idx], x[indices[start_idx:end_idx]])
-            
-            # Aggiornamento: x_i = x_i + (b_i - A_i * x) / A_ii
-            x[i] = x[i] + (b[i] - ax_i) / D[i]
-            
-    return x, max_iter, time.perf_counter() - start_t
+    while np.linalg.norm(xnew - xold, np.inf) > tol and nit < nmax:
+        xold = xnew.copy()
+        
+        # rhs = (b - B*xold)
+        rhs = b - B @ xold
+        # Risoluzione del sistema triangolare inferiore L * xnew = rhs
+        xnew = spsolve_triangular(L, rhs, lower=True)
+        
+        nit += 1
+        
+    elapsed_time = time.perf_counter() - start_time
+    err = np.linalg.norm(xnew - xold, np.inf) / np.linalg.norm(xnew, np.inf)
+    
+    return xnew, nit, elapsed_time

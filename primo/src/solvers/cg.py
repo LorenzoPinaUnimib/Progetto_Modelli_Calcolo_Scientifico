@@ -1,31 +1,53 @@
 import numpy as np
 import time
 
-def solve(A, b, tol, max_iter=20000):
+def solve(A, b, tol, nmax=20000):
     """
-    Risolve Ax = b usando il metodo del Gradiente Coniugato[cite: 9].
+    Metodo del Gradiente Coniugato
+    INPUT  : A=matrice del sistema, b=termine noto, x0=guess iniziale, 
+             tol=tolleranza, nmax=massimo numero di iterazioni
+    OUTPUT : xk=soluzione, nit=numero di iterazioni, time=tempo trascorso, err=errore finale
     """
-    n = A.shape[0]
-    x = np.zeros(n)  # Partenza da vettore nullo [cite: 19]
-    r = b - A @ x
+    
+    # Controllo delle proprietà della matrice A (come nei file .m)
+    M, N = A.shape
+    
+    if M != N:
+        print('Matrix A is not a square matrix')
+        return None, 0, 0, 1
+
+    nit = 0
+    xold = np.zeros(M)
+    
+    # Calcolo residuo iniziale
+    r = b - A @ xold
     p = r.copy()
-    nb = np.linalg.norm(b)
     
-    iters = 0
-    start_t = time.perf_counter()
+    # Errore iniziale (usando la logica del tuo metodo_gradiente.m)
+    # err = norm(b - A*x)/norm(x)
+    # Per evitare divisioni per zero se x è nullo, usiamo una protezione
+    err = np.linalg.norm(r) / (np.linalg.norm(xold) if np.linalg.norm(xold) != 0 else 1)
     
-    while iters < max_iter:
-        # Controllo convergenza residuo relativo [cite: 20]
-        if np.linalg.norm(r) / nb < tol:
-            return x, iters, time.perf_counter() - start_t
-        
+    start_time = time.perf_counter()
+    
+    while nit < nmax and err > tol:
         Ap = A @ p
-        alpha = (r @ r) / (p @ Ap)
-        x = x + alpha * p
-        r_new = r - alpha * Ap
-        beta = (r_new @ r_new) / (r @ r)
-        p = r_new + beta * p
-        r = r_new
-        iters += 1
+        alpha = np.dot(r, r) / np.dot(p, Ap)
         
-    return x, iters, time.perf_counter() - start_t # Ritorna anche se non converge [cite: 24]
+        xnew = xold + alpha * p
+        r_new = r - alpha * Ap
+        
+        beta = np.dot(r_new, r_new) / np.dot(r, r)
+        p = r_new + beta * p
+        
+        # Aggiornamento residuo e errore per il prossimo ciclo
+        r = r_new
+        err = np.linalg.norm(b - A @ xnew) / np.linalg.norm(xnew)
+        
+        xold = xnew
+        nit += 1
+    
+    elapsed_time = time.perf_counter() - start_time
+    xk = xold
+    
+    return xk, nit, elapsed_time
