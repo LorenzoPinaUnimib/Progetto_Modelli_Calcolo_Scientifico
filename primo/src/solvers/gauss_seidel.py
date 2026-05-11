@@ -6,32 +6,47 @@ import time
 def solve(A, b, tol, nmax=20000):
     M, N = A.shape
     
+    #Verifica matrice quadrata
     if M != N:
         print("Matrix A is not a square matrix")
-        return None, 0, 0, 1
+        return None, 0, 0
 
-    # extract needed matrices
+    # Creazione matrici e variabili usate durante la risoluzione
     # Formato csr richiesto per l'efficienza
-    L = sp.tril(A, format='csr') 
-    B = A - L
+    P = sp.tril(A, format='csr')
+    N = A - P
     
     xold = np.zeros(M)
-    xnew = xold + 1.0
+    xnew = xold
     nit = 0
 
+    # Calcolo errore
+    err = np.linalg.norm(A @ xnew - b, np.inf) / np.linalg.norm(b, np.inf)
+
+    # Salvataggio tempo di inizio
     start_time = time.perf_counter()
     
-    while np.linalg.norm(xnew - xold, np.inf) > tol and nit < nmax:
+    while err >= tol and nit < nmax:
+        if nit % 1000 == 0:
+            print("Gauss-Seidel: iterazione", nit)
+    
         xold = xnew.copy()
         
         # rhs = (b - B*xold)
-        rhs = b - B @ xold
-        # Risoluzione del sistema triangolare inferiore L * xnew = rhs
-        xnew = spsolve_triangular(L, rhs, lower=True)
+        rhs = b - A @ xold
+
+        # Risoluzione del sistema triangolare inferiore
+        y = spsolve_triangular(P, rhs, lower=True)
+
+        # Calcolo nuova x
+        xnew = xold + y
+
+        # Calcolo errore
+        err = np.linalg.norm(A @ xnew - b, np.inf) / np.linalg.norm(b, np.inf)
         
         nit += 1
         
+    # Calcolo tempo trascorso
     elapsed_time = time.perf_counter() - start_time
-    err = np.linalg.norm(xnew - xold, np.inf) / np.linalg.norm(xnew, np.inf)
     
     return xnew, nit, elapsed_time

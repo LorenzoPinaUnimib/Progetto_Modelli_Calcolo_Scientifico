@@ -12,12 +12,14 @@ def solve(A, b, tol, nmax=20000):
     # Controllo delle proprietà della matrice A (come nei file .m)
     M, N = A.shape
     
+    #Verifica matrice quadrata
     if M != N:
         print('Matrix A is not a square matrix')
-        return None, 0, 0, 1
+        return None, 0, 0
 
     nit = 0
     xold = np.zeros(M)
+    xnew = np.zeros(M)
     
     # Calcolo residuo iniziale
     r = b - A @ xold
@@ -30,7 +32,10 @@ def solve(A, b, tol, nmax=20000):
     
     start_time = time.perf_counter()
     
-    while nit < nmax and err > tol:
+    while nit < nmax and err >= tol:
+        if nit % 1000 == 0:
+            print("Gradiente Coniugato: iterazione", nit)
+    
         Ap = A @ p
         alpha = np.dot(r, r) / np.dot(p, Ap)
         

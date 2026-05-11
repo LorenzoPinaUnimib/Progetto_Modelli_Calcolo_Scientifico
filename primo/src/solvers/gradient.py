@@ -4,9 +4,10 @@ import time
 def solve(A, b, tol, nmax=20000):
     M, N = A.shape
     
+    #Verifica matrice quadrata
     if M != N:
         print("Matrix A is not a square matrix")
-        return None, 0, 0, 1
+        return None, 0, 0
         
     # Nota: la verifica degli autovalori (eig) su matrici sparse giganti bloccherebbe il PC.
     # Evitiamo di inserire il calcolo esplicito di eig(A) qui.
@@ -14,10 +15,14 @@ def solve(A, b, tol, nmax=20000):
     nit = 0
     err = 1.0
     xold = np.zeros(M)
+    xnew = np.zeros(M)
 
     start_time = time.perf_counter()
     
-    while nit < nmax and err > tol:
+    while nit < nmax and err >= tol:
+        if nit % 1000 == 0:
+            print("Gradiente: iterazione", nit)
+
         residual = b - A @ xold
         
         # step = (residual'*residual)/(residual'*A*residual)

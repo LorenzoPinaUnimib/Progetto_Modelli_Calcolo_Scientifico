@@ -23,14 +23,14 @@ def main():
     results = run_all_solvers(A, b, x_true, tol)
     
     # Stampa in console
-    print("\nRisultati Tabellari:")
-    print(f"{'Metodo':<20} | {'Iterazioni':<10} | {'Tempo (s)':<10} | {'Errore Rel.':<12}")
-    print("-" * 60)
+    print("\nRisultati Tabellari:\n")
+    print(f"{'Metodo':<20} | {'Iterazioni':<10} | {'Tempo (s)':<9} | {'Errore Rel.':<11} | {'Picco memoria (MB)'}")
+    print("-" * 80)
     for m, res in results.items():
-        print(f"{m:<20} | {res['iters']:<10} | {res['time']:<10.4f} | {res['err']:.2e}")
+        print(f"{m:<20} | {res['iters']:<10} | {res['time']:<9.4f} | {res['err']:<11.2e} | {res['peak_mem_mb']:.4f}")
         
     # Visualizzazione Grafici
-    show_dashboard(results, f"Matrice: {mtx_path.split('/')[-1]} | Tol: {tol}")
+    show_dashboard(results, f"Matrice: {mtx_path.split('/')[-1]} | Tol: {tol}", tol)
 
 if __name__ == "__main__":
     main()

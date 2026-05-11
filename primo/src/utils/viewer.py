@@ -25,7 +25,7 @@ def run_all_solvers(A, b, x_true, tol):
         x_sol, iters, elapsed = solver(A, b, tol)
         
         # Stop monitoraggio
-        current_mem, peak_mem = tracemalloc.get_traced_memory()
+        _, peak_mem = tracemalloc.get_traced_memory()
         tracemalloc.stop()
         
         # Calcolo errore
@@ -40,7 +40,7 @@ def run_all_solvers(A, b, x_true, tol):
         
     return results
 
-def show_dashboard(results, title_suffix):
+def show_dashboard(results, title_suffix, tol):
     """Genera una dashboard con 3 grafici: Tempo, Iterazioni, Memoria e Errore."""
     names = list(results.keys())
     times = [r["time"] for r in results.values()]
@@ -70,8 +70,9 @@ def show_dashboard(results, title_suffix):
     axs[1].tick_params(axis='x', rotation=45)
     
     # Aggiunge una linea orizzontale per indicare la convergenza ideale
-    axs[1].axhline(y=1e-10, color='r', linestyle='--', alpha=0.5, label='Tol 10^-10')
-    axs[1].legend()
+    # axs[1].axhline(y=1e-10, color='b', linestyle='--', alpha=0.5, label='Tol 1e-10')
+    # axs[1].axhline(y=tol, color='r', linestyle='--', alpha=0.5, label='Tol ' + str(tol))
+    # axs[1].legend()
 
     # 3. Grafico Memoria di Picco
     axs[2].bar(names, mems, color='salmon')
