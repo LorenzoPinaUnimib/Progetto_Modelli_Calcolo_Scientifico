@@ -8,7 +8,7 @@ def solve(A, b, tol, nmax=20000):
     #Verifica matrice quadrata
     if M != N:
         print("Matrix A is not a square matrix")
-        return None, 0, 0, 1
+        return None, 0, 0
         
     D_diag = A.diagonal()
 
@@ -20,12 +20,11 @@ def solve(A, b, tol, nmax=20000):
     # D = sp.diags(D_diag)
     D_inv = sp.diags(1.0 / D_diag)
     # B = D - A
-    xold = np.zeros(M)
-    xnew = xold + 1.0
+    x = np.zeros(M)
     nit = 0
 
     # Calcolo errore
-    r = b - A @ xnew.T
+    r = b - A @ x
     err = np.linalg.norm(r, np.inf) / np.linalg.norm(b, np.inf)
 
     # Salvataggio tempo di inizio
@@ -35,13 +34,12 @@ def solve(A, b, tol, nmax=20000):
         if nit % 1000 == 0:
             print("Jacobi: iterazione", nit)
 
-        xold = xnew.copy()
         # xnew = inv(D) * (B*xold + b) in formato array:
         # Calcolo nuova x
-        xnew = xold + D_inv @ r
+        x = x + D_inv @ r
 
         # Calcolo errore
-        r = b - A @ xnew.T
+        r = b - A @ x
         err = np.linalg.norm(r, np.inf) / np.linalg.norm(b, np.inf)
 
         nit += 1
@@ -49,4 +47,4 @@ def solve(A, b, tol, nmax=20000):
     # Calcolo tempo trascorso
     elapsed_time = time.perf_counter() - start_time
     
-    return xnew, nit, elapsed_time
+    return x, nit, elapsed_time

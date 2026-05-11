@@ -12,30 +12,37 @@ def solve(A, b, tol, nmax=20000):
     # Nota: la verifica degli autovalori (eig) su matrici sparse giganti bloccherebbe il PC.
     # Evitiamo di inserire il calcolo esplicito di eig(A) qui.
 
+    # Creazione variabili usate durante la risoluzione
     nit = 0
     err = 1.0
-    xold = np.zeros(M)
-    xnew = np.zeros(M)
+    x = np.zeros(M)
 
+    # Calcolo errore
+    err = np.linalg.norm(A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
+
+    # Salvataggio tempo di inizio
     start_time = time.perf_counter()
     
     while nit < nmax and err >= tol:
         if nit % 1000 == 0:
             print("Gradiente: iterazione", nit)
 
-        residual = b - A @ xold
+        # Calcolo residuo
+        residual = b - A @ x
         
-        # step = (residual'*residual)/(residual'*A*residual)
+        # Calcolo dimensione passo
         A_res = A @ residual
         step = np.dot(residual, residual) / np.dot(residual, A_res)
         
-        xnew = xold + step * residual
+        # Calcolo nuova x
+        x = x + step * residual
         
-        # err = norm(b - A*xnew)/norm(xnew)
-        err = np.linalg.norm(b - A @ xnew) / np.linalg.norm(xnew)
-        xold = xnew
+        # Calcolo errore
+        err = np.linalg.norm(A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
+
         nit += 1
         
+    # Calcolo tempo trascorso
     elapsed_time = time.perf_counter() - start_time
     
-    return xnew, nit, elapsed_time
+    return x, nit, elapsed_time

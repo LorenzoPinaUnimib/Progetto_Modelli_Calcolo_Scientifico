@@ -16,12 +16,11 @@ def solve(A, b, tol, nmax=20000):
     P = sp.tril(A, format='csr')
     N = A - P
     
-    xold = np.zeros(M)
-    xnew = xold
+    x = np.zeros(M)
     nit = 0
 
     # Calcolo errore
-    err = np.linalg.norm(A @ xnew - b, np.inf) / np.linalg.norm(b, np.inf)
+    err = np.linalg.norm(A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
 
     # Salvataggio tempo di inizio
     start_time = time.perf_counter()
@@ -29,24 +28,22 @@ def solve(A, b, tol, nmax=20000):
     while err >= tol and nit < nmax:
         if nit % 1000 == 0:
             print("Gauss-Seidel: iterazione", nit)
-    
-        xold = xnew.copy()
         
         # rhs = (b - B*xold)
-        rhs = b - A @ xold
+        rhs = b - A @ x
 
         # Risoluzione del sistema triangolare inferiore
         y = spsolve_triangular(P, rhs, lower=True)
 
         # Calcolo nuova x
-        xnew = xold + y
+        x = x + y
 
         # Calcolo errore
-        err = np.linalg.norm(A @ xnew - b, np.inf) / np.linalg.norm(b, np.inf)
+        err = np.linalg.norm(A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
         
         nit += 1
         
     # Calcolo tempo trascorso
     elapsed_time = time.perf_counter() - start_time
     
-    return xnew, nit, elapsed_time
+    return x, nit, elapsed_time

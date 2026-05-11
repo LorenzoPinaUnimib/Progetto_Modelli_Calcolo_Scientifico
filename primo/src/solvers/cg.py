@@ -9,7 +9,6 @@ def solve(A, b, tol, nmax=20000):
     OUTPUT : xk=soluzione, nit=numero di iterazioni, time=tempo trascorso, err=errore finale
     """
     
-    # Controllo delle proprietà della matrice A (come nei file .m)
     M, N = A.shape
     
     #Verifica matrice quadrata
