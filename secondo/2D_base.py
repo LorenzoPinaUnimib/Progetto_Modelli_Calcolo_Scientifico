@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import List
 
 def funzione(x, y):
     return x**3 + y**3
@@ -29,6 +30,15 @@ def tronca(c, n):
             if i > n or j > n:
                 c[i][j] = 0
 
+def split(matrice, dimensione):
+    split = np.array([])
+
+    for i in range(len(matrice) // dimensione):
+        for j in range(len(matrice[i]) // dimensione):
+            split = np.append(split, matrice[i * dimensione : i * (dimensione + 1)][j * dimensione : j * (dimensione + 1)])
+
+    return split
+
 def IDCT1(c):
     return np.transpose(calcola_D(len(c))) @ c
 
@@ -51,7 +61,10 @@ N = 10
 M = int(N * 0.4)
 
 x = (2 * np.arange(N) + 1) / (2 * N)
-f_samples = campiona_funzione(N)
+f_samples = np.array(campiona_funzione(N))
+
+#print(split(f_samples, 5))
+print(split_matrix_into_blocks(f_samples, 5))
 
 c = DCT2(f_samples, N, M)
 tronca(c, M)
