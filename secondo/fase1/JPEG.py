@@ -166,33 +166,35 @@ def sync_axes(axs):
     fig = axs[0].figure
     fig.canvas.mpl_connect('scroll_event', on_scroll)
 
-# Parametri regolabili: N è la dimensione dei blocchi e M il numero a cui si tronca
-N = 16
-M = int(0.4 * N)
+def JPEG(img, N, M):
+    D = calcola_D(N)
+
+    blocchi, righe, colonne = split(img, N)
+
+    if (len(blocchi) == 0):
+        print("Il numero di blocchi creato è 0, riprovare con N più piccolo")
+        return
+
+    c = DCT2(blocchi, D)
+    tronca(c, M)
+
+    blocchi = IDCT2(c, np.transpose(D))
+
+    img_rec = desplit(blocchi, righe, colonne)
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6.5))
+    axes[0].imshow(img, cmap='gray' if img.ndim == 2 else None)
+    axes[0].set_title('Originale')
+    axes[0].axis('off')
+
+    axes[1].imshow(img_rec, cmap='gray' if img_rec.ndim == 2 else None)
+    axes[1].set_title('Ricostruita (troncando da {} a {})'.format(N, M))
+    axes[1].axis('off')
+
+    sync_axes(axes)
+
+    plt.tight_layout()
+    plt.show()
 
 img = apri_immagine()
-
-D = calcola_D(N)
-
-blocchi, righe, colonne = split(img, N)
-
-c = DCT2(blocchi, D)
-tronca(c, M)
-
-blocchi = IDCT2(c, np.transpose(D))
-
-img_rec = desplit(blocchi, righe, colonne)
-
-fig, axes = plt.subplots(1, 2, figsize=(12, 6.5))
-axes[0].imshow(img, cmap='gray' if img.ndim == 2 else None)
-axes[0].set_title('Originale')
-axes[0].axis('off')
-
-axes[1].imshow(img_rec, cmap='gray' if img_rec.ndim == 2 else None)
-axes[1].set_title('Ricostruita (troncando da {} a {})'.format(N, M))
-axes[1].axis('off')
-
-sync_axes(axes)
-
-plt.tight_layout()
-plt.show()
+JPEG(img, 16, 4)
