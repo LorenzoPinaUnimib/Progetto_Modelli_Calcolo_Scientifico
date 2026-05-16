@@ -43,36 +43,63 @@ def calcola_D(N):
     return D
 
 def tronca(c, n):
-    c[n :, n :] = 0
+    c[:, n :, n :] = 0
 
 def DCT1(f, D):
     return D @ f
 
 def DCT2(blocchi, D):
-    c = [DCT1(col, D) for col in ([DCT1(row, D) for row in blocchi])]
+    # c = [DCT1(col, D) for col in np.transpose([DCT1(row, D) for row in blocchi])]
+    # c = [[DCT1(col, D) for col in ([DCT1(row, D) for row in blocco])] for blocco in blocchi]
 
-    return np.transpose(c)
+    c = np.ndarray([])
+    b = []
+
+    for blocco in blocchi:
+        tmp = np.array([DCT1(row, D) for row in blocco])
+        cols_dct = np.array([DCT1(col, D) for col in tmp.T])
+
+        b.append((np.asarray(cols_dct.T)))
+
+    c = np.stack(b, axis = 0)
+    return c
 
 def IDCT1(c, D_tr):
     return D_tr @ c
 
 def IDCT2(c, D_tr):
-    f = [IDCT1(col, D_tr) for col in ([IDCT1(row, D_tr) for row in c])]
+    # f = [IDCT1(col, D_tr) for col in np.transpose([IDCT1(row, D_tr) for row in c])]
 
-    return np.transpose(f)
+    f = np.ndarray([])
+    b = []
+
+    for blocco in c:
+        tmp = np.array([IDCT1(row, D_tr) for row in blocco])
+        cols_dct = np.array([IDCT1(col, D_tr) for col in tmp.T])
+
+        b.append((np.asarray(cols_dct.T)))
+
+    f = np.stack(b, axis = 0)
+    return f
 
 img = apri_immagine()
 
-blocchi, righe, colonne = split(img, 50)
+blocchi, righe, colonne = split(img, 16)
+print("Post split")
 
 D = calcola_D(len(blocchi[0]))
+print("Post D")
 
 c = DCT2(blocchi, D)
-tronca(c, 10)
+print("Post DCT2")
+tronca(c, 5)
+print("Post troncamento")
 
 blocchi = IDCT2(c, np.transpose(D))
+print("Post IDCT2")
 
 img_rec = desplit(blocchi, righe, colonne)
+print("Post desplit")
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 axes[0].imshow(img, cmap='gray' if img.ndim == 2 else None)
