@@ -166,8 +166,9 @@ def sync_axes(axs):
     fig = axs[0].figure
     fig.canvas.mpl_connect('scroll_event', on_scroll)
 
+# Parametri regolabili: N è la dimensione dei blocchi e M il numero a cui si tronca
 N = 16
-M = 4
+M = int(0.4 * N)
 
 img = apri_immagine()
 
