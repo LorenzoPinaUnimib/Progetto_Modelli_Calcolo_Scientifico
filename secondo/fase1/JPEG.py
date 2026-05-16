@@ -5,9 +5,9 @@ import matplotlib.image as mpimg
 import os
 from PIL import Image
 
-def apri_immagine():
+def apri_immagine(name):
     # Apro l'immagine
-    img = np.array(Image.open(os.path.join(__file__[:-8], "dati/tonypitony.bmp")).convert("L"), dtype=np.uint8)
+    img = np.array(Image.open(os.path.join(__file__[:-8], "dati/", name)).convert("L"), dtype=np.uint8)
 
     return img
 
@@ -196,5 +196,5 @@ def JPEG(img, N, M):
     plt.tight_layout()
     plt.show()
 
-img = apri_immagine()
+img = apri_immagine("tonypitony.bmp")
 JPEG(img, 16, 4)
