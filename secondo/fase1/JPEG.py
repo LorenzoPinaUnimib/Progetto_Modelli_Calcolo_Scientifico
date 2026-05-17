@@ -197,5 +197,6 @@ def JPEG(img, N, M, graph = True):
         plt.tight_layout()
         plt.show()
 
-# img = apri_immagine("bridge.bmp")
-# JPEG(img, 16, 1)
+if __name__ == "__main__":
+    img = apri_immagine("bridge.bmp")
+    JPEG(img, 16, 1)
