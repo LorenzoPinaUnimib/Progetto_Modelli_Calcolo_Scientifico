@@ -16,6 +16,13 @@ Note macOS
 Su macOS il Cocoa event loop richiede che TUTTE le operazioni UI avvengano
 sul thread principale. Questa classe è progettata per essere usata solo dal
 main thread. Non chiamare metodi di questa classe da thread secondari.
+
+Propagazione eventi scroll
+--------------------------
+Gli handler di scroll restituiscono "break" per impedire che l'evento venga
+propagato al widget padre (il canvas principale di scorrimento della finestra).
+Quando il mouse è su questo canvas, la rotella fa SOLO zoom — non scrolla la
+pagina. Lo scroll della pagina avviene solo quando il mouse è in aree libere.
 """
 
 import platform
@@ -47,7 +54,6 @@ class ZoomableImageCanvas(tk.Canvas):
         self._synced_canvas: "ZoomableImageCanvas | None" = None
         self._syncing: bool = False
 
-        # Pending resize debounce id
         self._resize_after_id: str | None = None
 
         self.bind("<ButtonPress-1>",   self._on_drag_start)
@@ -55,14 +61,12 @@ class ZoomableImageCanvas(tk.Canvas):
         self.bind("<Double-Button-1>", self._on_reset_view)
         self.bind("<Configure>",       self._on_resize)
 
-        # Cross-platform scroll
+        # Cross-platform scroll — restituiscono "break" per bloccare la propagazione
         if _PLATFORM == "Darwin":
-            # macOS: MouseWheel genera eventi con delta in "unità" (1 unità = 1 notch)
             self.bind("<MouseWheel>", self._on_mousewheel_macos)
         elif _PLATFORM == "Windows":
             self.bind("<MouseWheel>", self._on_mousewheel_windows)
         else:
-            # Linux / altri
             self.bind("<Button-4>", self._on_scroll_up_linux)
             self.bind("<Button-5>", self._on_scroll_down_linux)
 
@@ -90,7 +94,6 @@ class ZoomableImageCanvas(tk.Canvas):
         """Adatta l'immagine alla dimensione del canvas mantenendo le proporzioni."""
         if self._pil_image is None:
             return
-        # Usa after_idle per garantire che le dimensioni siano disponibili (sicuro su macOS)
         self.after_idle(self._do_reset_fit)
 
     # ------------------------------------------------------------------
@@ -104,7 +107,6 @@ class ZoomableImageCanvas(tk.Canvas):
         cw = self.winfo_width()
         ch = self.winfo_height()
         if cw <= 1 or ch <= 1:
-            # Il widget non è ancora visibile: riprova al prossimo idle
             self.after(50, self._do_reset_fit)
             return
         iw, ih = self._pil_image.size
@@ -115,7 +117,6 @@ class ZoomableImageCanvas(tk.Canvas):
         self._image_offset_y = (ch - scaled_h) / 2.0
         self._render()
 
-    # Mantieni il vecchio nome privato per retrocompatibilità con chiamate interne
     _reset_fit = reset_fit
 
     def _render(self) -> None:
@@ -138,7 +139,6 @@ class ZoomableImageCanvas(tk.Canvas):
     # ------------------------------------------------------------------
 
     def _image_point_from_canvas(self, cx: float, cy: float) -> tuple[float, float]:
-        """Converte coordinate canvas in coordinate normalizzate sull'immagine [0, 1]."""
         if self._pil_image is None or self._zoom_level == 0:
             return 0.0, 0.0
         iw, ih = self._pil_image.size
@@ -195,7 +195,6 @@ class ZoomableImageCanvas(tk.Canvas):
         self._propagate_view(cw / 2.0, ch / 2.0)
 
     def _zoom_at(self, x: int, y: int, factor: float) -> None:
-        """Applica uno zoom di fattore `factor` centrato sul punto (x, y) del canvas."""
         new_zoom = max(ZOOM_MIN, min(ZOOM_MAX, self._zoom_level * factor))
         actual_factor = new_zoom / self._zoom_level
         self._image_offset_x = x - actual_factor * (x - self._image_offset_x)
@@ -204,19 +203,23 @@ class ZoomableImageCanvas(tk.Canvas):
         self._render()
         self._propagate_view(x, y)
 
-    def _on_mousewheel_windows(self, event: tk.Event) -> None:
-        """Windows: event.delta è multiplo di 120 (positivo = su)."""
+    def _on_mousewheel_windows(self, event: tk.Event) -> str:
+        """Windows: event.delta multiplo di 120. Ritorna 'break' per bloccare lo scroll pagina."""
         self._zoom_at(event.x, event.y, ZOOM_FACTOR_IN if event.delta > 0 else ZOOM_FACTOR_OUT)
+        return "break"
 
-    def _on_mousewheel_macos(self, event: tk.Event) -> None:
-        """macOS: event.delta è in unità di scroll (positivo = su)."""
+    def _on_mousewheel_macos(self, event: tk.Event) -> str:
+        """macOS: event.delta in unità. Ritorna 'break' per bloccare lo scroll pagina."""
         self._zoom_at(event.x, event.y, ZOOM_FACTOR_IN if event.delta > 0 else ZOOM_FACTOR_OUT)
+        return "break"
 
-    def _on_scroll_up_linux(self, event: tk.Event) -> None:
+    def _on_scroll_up_linux(self, event: tk.Event) -> str:
         self._zoom_at(event.x, event.y, ZOOM_FACTOR_IN)
+        return "break"
 
-    def _on_scroll_down_linux(self, event: tk.Event) -> None:
+    def _on_scroll_down_linux(self, event: tk.Event) -> str:
         self._zoom_at(event.x, event.y, ZOOM_FACTOR_OUT)
+        return "break"
 
     def _on_reset_view(self, _event: tk.Event) -> None:
         self.reset_fit()
@@ -225,7 +228,6 @@ class ZoomableImageCanvas(tk.Canvas):
         self._propagate_view(cw / 2.0, ch / 2.0)
 
     def _on_resize(self, _event: tk.Event) -> None:
-        # Debounce: evita render multipli durante il ridimensionamento (causa freeze su macOS)
         if self._resize_after_id is not None:
             self.after_cancel(self._resize_after_id)
         self._resize_after_id = self.after(30, self._render)

@@ -16,15 +16,15 @@ Funzionalità
 
 Compatibilità macOS — threading
 ---------------------------------
-Il render matplotlib (_do_render) avviene in un thread secondario (daemon)
-lanciato da _initial_render e da redraw(). Il risultato (PIL Image) viene
-consegnato al main thread via widget.after(0, ...) e solo lì viene aggiornato
-il Tk PhotoImage e ridisegnato il canvas.
+Il render matplotlib avviene in un thread secondario (daemon).
+Il risultato (PIL Image) viene consegnato al main thread via widget.after(0, ...)
+e solo lì viene aggiornato il Tk PhotoImage e ridisegnato il canvas.
 
-FigureCanvasTkAgg + NavigationToolbar2Tk causano freeze su macOS perché
-matplotlib tenta operazioni UI da contesti non-main-thread. Questo widget
-usa il backend Agg puro (render in memoria → PNG → PIL → Tk PhotoImage)
-che è completamente thread-safe sul lato matplotlib.
+Propagazione eventi scroll
+--------------------------
+Gli handler di scroll restituiscono "break" per impedire che l'evento venga
+propagato al widget padre. Quando il mouse è su questo canvas, la rotella
+fa SOLO zoom — non scrolla la pagina.
 """
 
 import io
@@ -34,7 +34,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 import matplotlib
-matplotlib.use("Agg")           # backend non-interattivo — obbligatorio
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from constants import ZOOM_FACTOR_IN, ZOOM_FACTOR_OUT, ZOOM_MIN, ZOOM_MAX
@@ -88,7 +88,6 @@ class ZoomableChartCanvas(tk.Canvas):
 
         self._resize_after_id: str | None = None
 
-        # Protezione contro render concorrenti
         self._render_lock = threading.Lock()
         self._render_pending: bool = False
 
@@ -97,6 +96,7 @@ class ZoomableChartCanvas(tk.Canvas):
         self.bind("<Double-Button-1>", self._on_reset_view)
         self.bind("<Configure>",       self._on_resize)
 
+        # Scroll — restituiscono "break" per bloccare la propagazione verso la pagina
         if _PLATFORM == "Darwin":
             self.bind("<MouseWheel>", self._on_mousewheel_macos)
         elif _PLATFORM == "Windows":
@@ -105,7 +105,6 @@ class ZoomableChartCanvas(tk.Canvas):
             self.bind("<Button-4>", self._on_scroll_up_linux)
             self.bind("<Button-5>", self._on_scroll_down_linux)
 
-        # Primo render nell'idle loop
         self.after_idle(self._initial_render)
 
     # ------------------------------------------------------------------
@@ -117,7 +116,6 @@ class ZoomableChartCanvas(tk.Canvas):
         return self._fig
 
     def sync_with(self, *others: "ZoomableChartCanvas") -> None:
-        """Collega questo canvas con altri per sincronizzare zoom e pan."""
         for other in others:
             if other not in self._synced_canvases:
                 self._synced_canvases.append(other)
@@ -125,26 +123,16 @@ class ZoomableChartCanvas(tk.Canvas):
                 other._synced_canvases.append(self)
 
     def redraw(self) -> None:
-        """Forza un re-render completo della figura (thread sicuro)."""
         self._launch_render(reset_fit_after=True)
 
     # ------------------------------------------------------------------
-    # Render interno — avvio asincrono
+    # Render interno — asincrono
     # ------------------------------------------------------------------
 
     def _initial_render(self) -> None:
-        """Eseguito una volta sola nell'idle loop dopo che il canvas è mostrato."""
         self._launch_render(reset_fit_after=True)
 
     def _launch_render(self, reset_fit_after: bool = False) -> None:
-        """
-        Avvia il render matplotlib in un thread secondario.
-        Al termine aggiorna self._pil_image e chiama _reset_fit o _display
-        nel main thread tramite after(0, ...).
-
-        Se un render è già in corso, imposta un flag per eseguirne un altro
-        al termine (evita render sovrapposti ma non perde l'ultimo aggiornamento).
-        """
         if not self._render_lock.acquire(blocking=False):
             self._render_pending = True
             return
@@ -152,7 +140,7 @@ class ZoomableChartCanvas(tk.Canvas):
         draw_fn    = self._draw_fn
         fig_width  = self._fig_width
         fig_height = self._fig_height
-        old_fig    = self._fig  # chiuso nel thread dopo il render
+        old_fig    = self._fig
 
         def _worker():
             try:
@@ -171,7 +159,6 @@ class ZoomableChartCanvas(tk.Canvas):
                 pil_img = Image.open(buf).copy()
                 buf.close()
 
-                # Chiude la vecchia figura qui — Agg è thread-safe per plt.close
                 if old_fig is not None:
                     plt.close(old_fig)
 
@@ -180,7 +167,6 @@ class ZoomableChartCanvas(tk.Canvas):
                 return None, None
 
         def _on_done(result):
-            """Main thread: aggiorna stato e ridisegna."""
             new_fig, pil_img = result
             if new_fig is not None and pil_img is not None:
                 self._fig       = new_fig
@@ -192,7 +178,6 @@ class ZoomableChartCanvas(tk.Canvas):
 
             self._render_lock.release()
 
-            # Se nel frattempo è arrivata una nuova richiesta, eseguila ora
             if self._render_pending:
                 self._render_pending = False
                 self._launch_render(reset_fit_after=False)
@@ -202,7 +187,6 @@ class ZoomableChartCanvas(tk.Canvas):
             try:
                 self.after(0, lambda: _on_done(result))
             except tk.TclError:
-                # Il widget è stato distrutto mentre il thread girava
                 self._render_lock.release()
 
         t = threading.Thread(target=_thread_body, daemon=True)
@@ -213,7 +197,6 @@ class ZoomableChartCanvas(tk.Canvas):
     # ------------------------------------------------------------------
 
     def _reset_fit(self) -> None:
-        """Adatta l'immagine al canvas mantenendo le proporzioni (main thread)."""
         if self._pil_image is None:
             return
         self.after_idle(self._do_reset_fit)
@@ -228,14 +211,11 @@ class ZoomableChartCanvas(tk.Canvas):
             return
         iw, ih = self._pil_image.size
         self._zoom_level = min(cw / iw, ch / ih, 1.0)
-        sw = iw * self._zoom_level
-        sh = ih * self._zoom_level
-        self._image_offset_x = (cw - sw) / 2.0
-        self._image_offset_y = (ch - sh) / 2.0
+        self._image_offset_x = (cw - iw * self._zoom_level) / 2.0
+        self._image_offset_y = (ch - ih * self._zoom_level) / 2.0
         self._display()
 
     def _display(self) -> None:
-        """Ridisegna l'immagine sul canvas con zoom e offset correnti (main thread)."""
         if self._pil_image is None:
             return
         iw, ih = self._pil_image.size
@@ -304,7 +284,7 @@ class ZoomableChartCanvas(tk.Canvas):
         self._propagate_view(x, y)
 
     # ------------------------------------------------------------------
-    # Handler eventi
+    # Handler eventi — tutti restituiscono "break" per bloccare lo scroll pagina
     # ------------------------------------------------------------------
 
     def _on_drag_start(self, event: tk.Event) -> None:
@@ -321,20 +301,25 @@ class ZoomableChartCanvas(tk.Canvas):
         ch = self.winfo_height() or 400
         self._propagate_view(cw / 2.0, ch / 2.0)
 
-    def _on_mousewheel_windows(self, event: tk.Event) -> None:
+    def _on_mousewheel_windows(self, event: tk.Event) -> str:
+        """Windows: delta multiplo di 120. Ritorna 'break' → solo zoom, no scroll pagina."""
         factor = ZOOM_FACTOR_IN if event.delta > 0 else ZOOM_FACTOR_OUT
         self._zoom_at(event.x, event.y, factor)
+        return "break"
 
-    def _on_mousewheel_macos(self, event: tk.Event) -> None:
-        """macOS: event.delta positivo = scroll su = zoom in."""
+    def _on_mousewheel_macos(self, event: tk.Event) -> str:
+        """macOS: delta in unità. Ritorna 'break' → solo zoom, no scroll pagina."""
         factor = ZOOM_FACTOR_IN if event.delta > 0 else ZOOM_FACTOR_OUT
         self._zoom_at(event.x, event.y, factor)
+        return "break"
 
-    def _on_scroll_up_linux(self, event: tk.Event) -> None:
+    def _on_scroll_up_linux(self, event: tk.Event) -> str:
         self._zoom_at(event.x, event.y, ZOOM_FACTOR_IN)
+        return "break"
 
-    def _on_scroll_down_linux(self, event: tk.Event) -> None:
+    def _on_scroll_down_linux(self, event: tk.Event) -> str:
         self._zoom_at(event.x, event.y, ZOOM_FACTOR_OUT)
+        return "break"
 
     def _on_reset_view(self, _event: tk.Event) -> None:
         self._reset_fit()
@@ -343,7 +328,6 @@ class ZoomableChartCanvas(tk.Canvas):
         self._propagate_view(cw / 2.0, ch / 2.0)
 
     def _on_resize(self, _event: tk.Event) -> None:
-        # Debounce: raggruppa eventi di resize ravvicinati (evita freeze su macOS)
         if self._resize_after_id is not None:
             self.after_cancel(self._resize_after_id)
         self._resize_after_id = self.after(30, self._display)
