@@ -5,7 +5,7 @@ import time
 
 def solve(A, b, tol, nmax=20000):
     """
-    Metodo di Jacobi
+    Metodo di Gauß-Seidel
     INPUT  : A=matrice del sistema, b=termine noto,
              tol=tolleranza, nmax=massimo numero di iterazioni
     OUTPUT : x=soluzione, nit=numero di iterazioni, time=tempo trascorso
@@ -18,10 +18,15 @@ def solve(A, b, tol, nmax=20000):
         print("La matrice passata in argomento non è quadrata, Gauß-Seidel non è applicabile")
         return None, 0, 0
 
+    D_diag = A.diagonal()
+
+    # Controllo sulla presenza di 0 sulla diagonale
+    if np.any(D_diag == 0):
+        print("Almeno un enemento sulla diagonale è zero, Gauß-Seidel fallisce")
+        return None, 0, 0
+
     # Estrazione della matrice triangolare inferiore
     P = sp.tril(A, format='csr')
-    # Matrice superiore, inutilizzata (?)
-    N = A - P
     
     # Creazione del vettore della soluzione, composto da zeri, come da consegna
     x = np.zeros(M)

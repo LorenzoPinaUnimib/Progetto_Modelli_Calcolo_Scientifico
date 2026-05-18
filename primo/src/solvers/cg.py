@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import scipy.sparse.linalg as spla
 
 def solve(A, b, tol, nmax=20000):
     """
@@ -14,6 +15,24 @@ def solve(A, b, tol, nmax=20000):
     # Verifica che la matrice sia quadrata
     if M != N:
         print("La matrice passata in argomento non è quadrata, gradiente coniugato non è applicabile")
+        return None, 0, 0
+
+    # Verifica simmetria della matrice
+    if (A - A.T).nnz != 0:
+        print("La matrice non è simmetrica, il metodo del gradiente coniugato non è applicabile.")
+        return None, 0, 0
+
+    # Verifica che sia definita positiva, calcolando solo autovalore più piccolo per ottimizzazione
+    try:
+        min_eigenval = spla.eigsh(A, k=1, which='SM', return_eigenvectors=False)
+        if min_eigenval[0] <= 1e-10:  # Tolleranza per lo zero numerico
+            print("La matrice non è definita positiva, il metodo del gradiente coniugato non è applicabile.")
+            return None, 0, 0
+        else: 
+            print(f"Autovalore minimo per metodo gradiente coniugato: {min_eigenval[0]}")
+    except (ValueError, RuntimeError):
+        # Cattura eventuali problemi di convergenza del solutore ARPACK su matrici singolari
+        print("Impossibile determinare se la matrice è definita positiva (mancata convergenza degli autovalori).")
         return None, 0, 0
 
     # Creazione dei vettori della soluzione, composto da zeri, come da consegna
