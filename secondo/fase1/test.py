@@ -32,7 +32,7 @@ o_n3 = [timesJPEG[0] * (N / N0)**3 for N in Ns]
 plt.figure(figsize=(8, 8))
 plt.plot(Ns, timesJPEG, marker='o', linestyle='-', label='JPEG', linewidth=2)
 plt.plot(Ns, timesScipy, marker='o', linestyle='-', label='Scipy', linewidth=2)
-plt.plot(Ns, o_n2, linestyle='--', label='O(N²)', linewidth=2)
+plt.plot(Ns, o_n2, linestyle='--', label='O(N²logN)', linewidth=2)
 plt.plot(Ns, o_n3, linestyle='--', label='O(N³)', linewidth=2)
 plt.xlabel('N')
 plt.ylabel('Tempo in secondi')
