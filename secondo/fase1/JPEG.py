@@ -3,11 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from PIL import Image
-from dct_compression import compress_image as fase2_compress_image
 
 def apri_immagine(name):
     # Apro l'immagine
-    img = np.array(Image.open(os.path.join(__file__[:-8], "dati/", name)).convert("L"), dtype=np.uint8)
+    img = np.array(Image.open(os.path.join(__file__[:-14], "dati/", name)).convert("L"), dtype=np.uint8)
 
     return img
 
@@ -173,7 +172,7 @@ def sync_axes(axs):
     fig = axs[0].figure
     fig.canvas.mpl_connect('scroll_event', on_scroll)
 
-def JPEG(img, N, M, graph = True, triang = False):
+def JPEG(img, N, M, grafico = True, triangolare = False):
     D = calcola_D(N)
 
     blocchi, righe, colonne = split(img, N)
@@ -183,18 +182,14 @@ def JPEG(img, N, M, graph = True, triang = False):
         return
 
     c = DCT2(blocchi, D)
-    tronca(c, M, triang)
-    print(c)
-    print(c.shape)
+    tronca(c, M, triangolare)
 
     blocchi = IDCT2(c, np.transpose(D))
 
     img_rec = desplit(blocchi, righe, colonne)
 
-    if graph:
-        img_fase2 = fase2_compress_image(img, block_size=N, threshold_d=M) 
-
-        _, axes = plt.subplots(1, 3, figsize=(12, 6.5))
+    if grafico:
+        _, axes = plt.subplots(1, 2, figsize=(12, 6.5))
         axes[0].imshow(img, cmap='gray' if img.ndim == 2 else None)
         axes[0].set_title('Originale')
         axes[0].axis('off')
@@ -202,10 +197,6 @@ def JPEG(img, N, M, graph = True, triang = False):
         axes[1].imshow(img_rec, cmap='gray' if img_rec.ndim == 2 else None)
         axes[1].set_title('Ricostruita (troncando da {} a {})'.format(N, M))
         axes[1].axis('off')
-
-        axes[2].imshow(img_fase2, cmap='gray' if img_fase2.ndim == 2 else None)
-        axes[2].set_title('Ricostruita (troncando da {} a {})'.format(N, M))
-        axes[2].axis('off')
 
         sync_axes(axes)
 
