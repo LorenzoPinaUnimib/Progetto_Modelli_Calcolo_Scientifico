@@ -1,9 +1,9 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import os
 from PIL import Image
+from dct_compression import compress_image as fase2_compress_image
 
 def apri_immagine(name):
     # Apro l'immagine
@@ -61,8 +61,15 @@ def calcola_D(N):
 
     return D
 
-def tronca(c, n):
-    c[:, n :, n :] = 0
+def tronca(c, n, triang = False):
+    if (triang):
+        N = c.shape[1]
+        k, l = np.indices((N, N))
+        mask = (k + l) < n # True = mantieni, False = azzera
+        c[:, ~mask] = 0
+    else:
+        c[:, n :, :] = 0
+        c[:, :, n :] = 0
 
 def DCT1(f, D):
     return D @ f
@@ -166,7 +173,7 @@ def sync_axes(axs):
     fig = axs[0].figure
     fig.canvas.mpl_connect('scroll_event', on_scroll)
 
-def JPEG(img, N, M, graph = True):
+def JPEG(img, N, M, graph = True, triang = False):
     D = calcola_D(N)
 
     blocchi, righe, colonne = split(img, N)
@@ -176,14 +183,18 @@ def JPEG(img, N, M, graph = True):
         return
 
     c = DCT2(blocchi, D)
-    tronca(c, M)
+    tronca(c, M, triang)
+    print(c)
+    print(c.shape)
 
     blocchi = IDCT2(c, np.transpose(D))
 
     img_rec = desplit(blocchi, righe, colonne)
 
     if graph:
-        _, axes = plt.subplots(1, 2, figsize=(12, 6.5))
+        img_fase2 = fase2_compress_image(img, block_size=N, threshold_d=M) 
+
+        _, axes = plt.subplots(1, 3, figsize=(12, 6.5))
         axes[0].imshow(img, cmap='gray' if img.ndim == 2 else None)
         axes[0].set_title('Originale')
         axes[0].axis('off')
@@ -192,6 +203,10 @@ def JPEG(img, N, M, graph = True):
         axes[1].set_title('Ricostruita (troncando da {} a {})'.format(N, M))
         axes[1].axis('off')
 
+        axes[2].imshow(img_fase2, cmap='gray' if img_fase2.ndim == 2 else None)
+        axes[2].set_title('Ricostruita (troncando da {} a {})'.format(N, M))
+        axes[2].axis('off')
+
         sync_axes(axes)
 
         plt.tight_layout()
@@ -199,4 +214,4 @@ def JPEG(img, N, M, graph = True):
 
 if __name__ == "__main__":
     img = apri_immagine("bridge.bmp")
-    JPEG(img, 16, 1)
+    JPEG(img, 16, 5, True, False)
