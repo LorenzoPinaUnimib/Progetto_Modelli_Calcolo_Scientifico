@@ -8,7 +8,7 @@ def solve(A, b, tol, nmax=20000):
     Metodo di Gauß-Seidel
     INPUT  : A=matrice del sistema, b=termine noto,
              tol=tolleranza, nmax=massimo numero di iterazioni
-    OUTPUT : x=soluzione, nit=numero di iterazioni, time=tempo trascorso
+    OUTPUT : x=soluzione, nit=numero di iterazioni, elapsed_time=tempo trascorso
     """
 
     M, N = A.shape

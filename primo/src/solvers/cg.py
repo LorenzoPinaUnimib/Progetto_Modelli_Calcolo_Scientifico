@@ -7,7 +7,7 @@ def solve(A, b, tol, nmax=20000):
     Metodo del Gradiente Coniugato
     INPUT  : A=matrice del sistema, b=termine noto,
              tol=tolleranza, nmax=massimo numero di iterazioni
-    OUTPUT : xk=soluzione, nit=numero di iterazioni, time=tempo trascorso
+    OUTPUT : xk=soluzione, nit=numero di iterazioni, elapsed_time=tempo trascorso
     """
     
     M, N = A.shape
