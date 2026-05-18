@@ -10,50 +10,67 @@ DctCompressionApp gestisce:
   - visualizzazione di 4 grafici interattivi con zoom/pan linkati a coppie:
       * istogramma originale  ↔  istogramma compressa
       * mappa DCT originale   ↔  mappa DCT troncata (coefficienti azzerati)
+
+I grafici sono renderizzati come canvas Tkinter nativi (ZoomableChartCanvas):
+matplotlib viene usato solo come motore di disegno in memoria (backend Agg),
+senza embedding di FigureCanvasTkAgg né NavigationToolbar2Tk.
+
+Compatibilità macOS
+-------------------
+Tutte le operazioni CPU-intensive (compress_image, build_dct_frequency_map,
+render matplotlib) girano in un thread secondario via _run_in_thread().
+Il risultato viene restituito al main thread tramite root.after(0, callback),
+evitando freeze e spinning beachball. Nessun widget Tkinter viene mai
+toccato dal thread secondario.
 """
 
+import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 import numpy as np
 import matplotlib
-matplotlib.use("TkAgg")
+matplotlib.use("Agg")          # backend non-interattivo — niente finestre Tk interne
 import matplotlib.pyplot as plt
 
 from image_utils import load_grayscale_bmp, numpy_array_to_pil_image
 from dct_compression import compress_image
 from dct_analysis import build_dct_frequency_map
 from constants import (
-    WINDOW_TITLE, WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT,
+    WINDOW_TITLE,
     LABEL_SELECT_IMAGE, LABEL_ORIGINAL, LABEL_COMPRESSED,
     BUTTON_SELECT_TEXT, BUTTON_COMPRESS_TEXT,
     PARAM_F_LABEL, PARAM_D_LABEL,
     PARAM_F_MIN, PARAM_F_MAX, PARAM_D_MIN,
     FILE_TYPES,
 )
-from widgets import ZoomableImageCanvas, LinkedAxesGroup, make_chart_panel
+from widgets import ZoomableImageCanvas, LinkedChartGroup, make_chart_panel
 from gui import validate_compression_parameters
 
 
 class DctCompressionApp:
     """
     Finestra principale dell'applicazione di compressione DCT2.
+    Il minsize e la geometria iniziale sono gestiti da gui.py al momento
+    della creazione della root window, adattandosi allo schermo disponibile.
     """
 
     def __init__(self, root: tk.Tk) -> None:
         self._root = root
         self._root.title(WINDOW_TITLE)
-        self._root.minsize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
 
         self._selected_image_path: str | None             = None
         self._original_grayscale_array: np.ndarray | None = None
 
-        # Risorse grafici matplotlib (frame + canvas)
-        self._chart_resources: list[tuple[tk.Widget, "FigureCanvasTkAgg"]] = []
-        # Gruppi di assi linkati (ricreati a ogni compressione)
-        self._linked_axes_groups: list[LinkedAxesGroup] = []
+        # Canvas dei grafici (ZoomableChartCanvas)
+        self._chart_canvases: list = []
+        # Gruppi di canvas linkati (ricreati a ogni compressione)
+        self._linked_chart_groups: list[LinkedChartGroup] = []
         # Frame contenitore dei 4 pannelli grafici
         self._charts_outer_frame: ttk.Frame | None = None
+
+        # Flag per evitare compressioni concorrenti
+        self._compression_running: bool = False
 
         self._build_ui()
 
@@ -78,7 +95,9 @@ class DctCompressionApp:
 
         self._inner_frame.bind("<Configure>", self._on_inner_frame_configure)
         self._main_canvas.bind("<Configure>", self._on_canvas_configure)
-        self._main_canvas.bind("<MouseWheel>", self._on_main_scroll_windows)
+
+        # Scroll della finestra principale: Windows/macOS e Linux
+        self._main_canvas.bind("<MouseWheel>", self._on_main_scroll_mousewheel)
         self._main_canvas.bind("<Button-4>",   self._on_main_scroll_up_linux)
         self._main_canvas.bind("<Button-5>",   self._on_main_scroll_down_linux)
 
@@ -91,7 +110,8 @@ class DctCompressionApp:
     def _on_canvas_configure(self, event: tk.Event) -> None:
         self._main_canvas.itemconfig(self._inner_window_id, width=event.width)
 
-    def _on_main_scroll_windows(self, event: tk.Event) -> None:
+    def _on_main_scroll_mousewheel(self, event: tk.Event) -> None:
+        """Scroll verticale: Windows delta multiplo di 120, macOS delta in unità."""
         self._main_canvas.yview_scroll(-1 if event.delta > 0 else 1, "units")
 
     def _on_main_scroll_up_linux(self, _event: tk.Event) -> None:
@@ -135,10 +155,15 @@ class DctCompressionApp:
             textvariable=self._threshold_d_var, width=6,
         ).pack(side=tk.LEFT, padx=(4, 16))
 
-        ttk.Button(
+        self._compress_button = ttk.Button(
             params_row, text=BUTTON_COMPRESS_TEXT,
             command=self._on_compress_clicked,
-        ).pack(side=tk.LEFT)
+        )
+        self._compress_button.pack(side=tk.LEFT)
+
+        # Label di stato (mostrata durante la compressione)
+        self._status_label = ttk.Label(params_row, text="", foreground="gray")
+        self._status_label.pack(side=tk.LEFT, padx=(10, 0))
 
         ttk.Label(
             control_frame,
@@ -168,27 +193,105 @@ class DctCompressionApp:
 
         self._original_canvas.sync_with(self._compressed_canvas)
 
+        # Propaga lo scroll al canvas principale anche quando il mouse è sui canvas immagine
+        for canvas in (self._original_canvas, self._compressed_canvas):
+            canvas.bind("<MouseWheel>", self._on_child_scroll_mousewheel, add=True)
+            canvas.bind("<Button-4>",   self._on_main_scroll_up_linux,    add=True)
+            canvas.bind("<Button-5>",   self._on_main_scroll_down_linux,  add=True)
+
+    # ------------------------------------------------------------------
+    # Scroll propagation da widget figli al canvas principale
+    # ------------------------------------------------------------------
+
+    def _on_child_scroll_mousewheel(self, event: tk.Event) -> None:
+        """
+        Propaga lo scroll verticale al canvas principale quando il mouse è su un
+        widget figlio (canvas immagine o grafico). Su macOS Tkinter non propaga
+        automaticamente gli eventi di scroll verso i widget padre.
+        """
+        self._main_canvas.yview_scroll(-1 if event.delta > 0 else 1, "units")
+
+    def _register_child_scroll(self, widget: tk.Widget) -> None:
+        """
+        Registra i binding di scroll sul widget dato in modo che lo scroll
+        raggiunga il canvas principale. Da chiamare su ogni ZoomableChartCanvas
+        creato dinamicamente.
+        """
+        widget.bind("<MouseWheel>", self._on_child_scroll_mousewheel, add=True)
+        widget.bind("<Button-4>",   self._on_main_scroll_up_linux,    add=True)
+        widget.bind("<Button-5>",   self._on_main_scroll_down_linux,  add=True)
+
+    # ------------------------------------------------------------------
+    # Threading: esecuzione asincrona senza freeze del main thread
+    # ------------------------------------------------------------------
+
+    def _run_in_thread(self, worker, on_done, on_error=None) -> None:
+        """
+        Esegue `worker()` in un thread secondario (daemon).
+        Al termine chiama `on_done(result)` nel main thread tramite after(0).
+        In caso di eccezione chiama `on_error(exc)` nel main thread.
+
+        Nessun widget Tkinter viene toccato dal thread secondario.
+        """
+        def _thread_body():
+            try:
+                result = worker()
+                self._root.after(0, lambda: on_done(result))
+            except Exception as exc:
+                if on_error is not None:
+                    self._root.after(0, lambda: on_error(exc))
+                else:
+                    self._root.after(0, lambda: messagebox.showerror(
+                        "Errore interno", str(exc)
+                    ))
+
+        t = threading.Thread(target=_thread_body, daemon=True)
+        t.start()
+
+    # ------------------------------------------------------------------
+    # Stato UI durante la compressione
+    # ------------------------------------------------------------------
+
+    def _set_busy(self, message: str) -> None:
+        """Disabilita il bottone Comprimi e mostra un messaggio di stato."""
+        self._compression_running = True
+        self._compress_button.config(state=tk.DISABLED)
+        self._status_label.config(text=message)
+        self._root.config(cursor="watch")
+
+    def _set_idle(self) -> None:
+        """Riabilita il bottone Comprimi e rimuove il messaggio di stato."""
+        self._compression_running = False
+        self._compress_button.config(state=tk.NORMAL)
+        self._status_label.config(text="")
+        self._root.config(cursor="")
+
     # ------------------------------------------------------------------
     # Grafici di analisi
     # ------------------------------------------------------------------
 
     def _remove_charts(self) -> None:
         """Distrugge tutti i widget e le figure matplotlib dei grafici precedenti."""
-        self._linked_axes_groups.clear()
-        for _frame, mpl_canvas in self._chart_resources:
-            mpl_canvas.get_tk_widget().destroy()
-            plt.close(mpl_canvas.figure)
-        self._chart_resources.clear()
+        self._linked_chart_groups.clear()
+        # Chiude le figure matplotlib ancora in vita nei canvas (main thread — sicuro)
+        figs_to_close = [
+            c.fig for c in self._chart_canvases if c.fig is not None
+        ]
+        for fig in figs_to_close:
+            plt.close(fig)
+        self._chart_canvases.clear()
         if self._charts_outer_frame is not None:
             self._charts_outer_frame.destroy()
             self._charts_outer_frame = None
 
     def _show_charts(
         self,
-        original: np.ndarray,
-        compressed: np.ndarray,
-        block_size: int,
+        original:    np.ndarray,
+        compressed:  np.ndarray,
+        block_size:  int,
         threshold_d: int,
+        freq_full:   np.ndarray,
+        freq_trunc:  np.ndarray,
     ) -> None:
         """
         Crea 4 pannelli grafici interattivi sotto alle anteprime immagine.
@@ -196,10 +299,11 @@ class DctCompressionApp:
         Griglia 2×2:
           [0,0] Istogramma originale    [0,1] Istogramma compressa
           [1,0] Frequenze DCT originali [1,1] Frequenze DCT troncate
+
+        freq_full e freq_trunc sono già calcolate (nel thread) e passate qui.
         """
         self._remove_charts()
 
-        freq_full, freq_trunc = build_dct_frequency_map(original, block_size, threshold_d)
         vmax_full = freq_full.max() if freq_full.max() > 0 else 1.0
         kept  = int(np.sum(freq_trunc > 0))
         total = block_size * block_size
@@ -210,8 +314,7 @@ class DctCompressionApp:
             self._inner_frame,
             text=(
                 "Analisi \u2014 istogrammi e frequenze DCT  "
-                "[ \U0001f517 zoom/pan linkati per coppia ]  "
-                "(toolbar: \U0001f50d zoom rett. \u00b7 \u270b pan \u00b7 \U0001f3e0 reset \u00b7 \U0001f4be salva)"
+                "[ \U0001f517 zoom/pan linkati per coppia ]"
             ),
             padding=8,
         )
@@ -258,7 +361,6 @@ class DctCompressionApp:
             ax.set_xlabel("Frequenza orizzontale (j)", fontsize=8)
             ax.set_ylabel("Frequenza verticale (i)",   fontsize=8)
             ax.tick_params(labelsize=7)
-            # Linea diagonale di taglio
             if 0 < threshold_d <= 2 * block_size - 2:
                 d, F = threshold_d, block_size
                 x0 = min(d, F - 1);  y0 = max(d - (F - 1), 0)
@@ -293,9 +395,9 @@ class DctCompressionApp:
         ]
 
         # ---- Creazione pannelli -----------------------------------------
-        collected_axes: list[plt.Axes] = []
+        collected_canvases = []
         for title, draw_fn, row, col in chart_specs:
-            panel, mpl_canvas, ax = make_chart_panel(
+            panel, chart_canvas = make_chart_panel(
                 self._charts_outer_frame,
                 title=title,
                 draw_fn=draw_fn,
@@ -303,15 +405,15 @@ class DctCompressionApp:
                 fig_height=3.6,
             )
             panel.grid(row=row, column=col, sticky=tk.NSEW, padx=6, pady=6)
-            self._chart_resources.append((panel, mpl_canvas))
-            collected_axes.append(ax)
+            self._chart_canvases.append(chart_canvas)
+            collected_canvases.append(chart_canvas)
+            # Propaga lo scroll al canvas principale anche da dentro i grafici
+            self._register_child_scroll(chart_canvas)
 
         # ---- Collegamento zoom/pan a coppie -----------------------------
-        # [0] istogramma originale  [1] istogramma compressa
-        # [2] mappa DCT originale   [3] mappa DCT troncata
-        self._linked_axes_groups = [
-            LinkedAxesGroup([collected_axes[0], collected_axes[1]], sync_x=True, sync_y=True),
-            LinkedAxesGroup([collected_axes[2], collected_axes[3]], sync_x=True, sync_y=True),
+        self._linked_chart_groups = [
+            LinkedChartGroup([collected_canvases[0], collected_canvases[1]]),
+            LinkedChartGroup([collected_canvases[2], collected_canvases[3]]),
         ]
 
         # ---- Aggiorna scroll e salta ai grafici -------------------------
@@ -346,6 +448,16 @@ class DctCompressionApp:
         self._remove_charts()
 
     def _on_compress_clicked(self) -> None:
+        """
+        Avvia la compressione in un thread secondario per non bloccare il main thread.
+        Il flusso è:
+          1. Validazione parametri (main thread)
+          2. compress_image + build_dct_frequency_map (thread secondario)
+          3. Aggiornamento UI con risultati (main thread via after(0, ...))
+        """
+        if self._compression_running:
+            return  # compressione già in corso
+
         if self._original_grayscale_array is None:
             messagebox.showwarning("Nessuna immagine", "Seleziona prima un'immagine BMP.")
             return
@@ -371,16 +483,37 @@ class DctCompressionApp:
             )
             return
 
-        try:
-            compressed_array = compress_image(
-                grayscale_image=self._original_grayscale_array,
+        # Cattura le variabili necessarie al thread (evita race condition su self)
+        source_array = self._original_grayscale_array
+        self._set_busy("Compressione in corso\u2026")
+
+        def _worker():
+            """Eseguito nel thread secondario: solo numpy/scipy, niente Tkinter."""
+            compressed = compress_image(
+                grayscale_image=source_array,
                 block_size=block_size,
                 threshold_d=threshold_d,
             )
-        except Exception as error:
-            messagebox.showerror("Errore compressione", str(error))
-            return
+            freq_full, freq_trunc = build_dct_frequency_map(
+                source_array, block_size, threshold_d
+            )
+            return compressed, freq_full, freq_trunc
 
-        self._original_canvas._reset_fit()
-        self._compressed_canvas.set_image(numpy_array_to_pil_image(compressed_array))
-        self._show_charts(self._original_grayscale_array, compressed_array, block_size, threshold_d)
+        def _on_done(result):
+            """Chiamato nel main thread al termine del calcolo."""
+            compressed_array, freq_full, freq_trunc = result
+            self._set_idle()
+            self._original_canvas._reset_fit()
+            self._compressed_canvas.set_image(numpy_array_to_pil_image(compressed_array))
+            self._show_charts(
+                source_array, compressed_array,
+                block_size, threshold_d,
+                freq_full, freq_trunc,
+            )
+
+        def _on_error(exc):
+            """Chiamato nel main thread in caso di eccezione nel worker."""
+            self._set_idle()
+            messagebox.showerror("Errore compressione", str(exc))
+
+        self._run_in_thread(_worker, _on_done, _on_error)

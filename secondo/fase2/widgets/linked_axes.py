@@ -1,80 +1,53 @@
 """
 widgets/linked_axes.py
 ----------------------
-Collega gruppi di Axes matplotlib per sincronizzare zoom e pan
-in modo bidirezionale tramite i callback xlim_changed / ylim_changed.
+Collega gruppi di ZoomableChartCanvas per sincronizzare zoom e pan
+in modo bidirezionale.
 
-A differenza di sharex/sharey (solo in fase di creazione), questa classe
-può essere applicata ad Axes già esistenti e appartenenti a figure diverse.
+A differenza del precedente approccio basato sui callback xlim_changed /
+ylim_changed di matplotlib (che richiedeva FigureCanvasTkAgg), questa classe
+opera direttamente sui canvas Tkinter tramite il loro meccanismo sync_with,
+garantendo una sincronizzazione pulita senza embedding matplotlib.
+
+L'API pubblica è rimasta invariata (LinkedChartGroup può essere usato esattamente
+come prima) ma internamente non dipende più da Figure/Axes matplotlib.
 """
 
-import matplotlib.pyplot as plt
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .zoomable_chart_canvas import ZoomableChartCanvas
 
 
-class LinkedAxesGroup:
+class LinkedChartGroup:
     """
-    Sincronizza i limiti di visualizzazione (xlim / ylim) tra più Axes matplotlib.
+    Collega più ZoomableChartCanvas in modo che zoom e pan siano sincronizzati.
+
+    Chiama semplicemente .sync_with() su tutti i canvas del gruppo, che
+    implementa la propagazione bidirezionale.
 
     Parameters
     ----------
-    axes_list : lista di Axes da collegare
-    sync_x    : se True, propaga i cambiamenti sull'asse X
-    sync_y    : se True, propaga i cambiamenti sull'asse Y
+    canvases : lista di ZoomableChartCanvas da sincronizzare
     """
 
-    def __init__(
-        self,
-        axes_list: list,
-        sync_x: bool = True,
-        sync_y: bool = True,
-    ) -> None:
-        self._axes    = list(axes_list)
-        self._sync_x  = sync_x
-        self._sync_y  = sync_y
-        self._updating = False
-
-        for ax in self._axes:
-            if sync_x:
-                ax.callbacks.connect("xlim_changed", self._on_xlim_changed)
-            if sync_y:
-                ax.callbacks.connect("ylim_changed", self._on_ylim_changed)
-
-    # ------------------------------------------------------------------
-    # Callback interni
-    # ------------------------------------------------------------------
-
-    def _on_xlim_changed(self, changed_ax) -> None:
-        if self._updating or not self._sync_x:
-            return
-        self._updating = True
-        try:
-            xlim = changed_ax.get_xlim()
-            for ax in self._axes:
-                if ax is not changed_ax:
-                    ax.set_xlim(xlim, emit=False)
-                    ax.figure.canvas.draw_idle()
-        finally:
-            self._updating = False
-
-    def _on_ylim_changed(self, changed_ax) -> None:
-        if self._updating or not self._sync_y:
-            return
-        self._updating = True
-        try:
-            ylim = changed_ax.get_ylim()
-            for ax in self._axes:
-                if ax is not changed_ax:
-                    ax.set_ylim(ylim, emit=False)
-                    ax.figure.canvas.draw_idle()
-        finally:
-            self._updating = False
-
-    # ------------------------------------------------------------------
-    # API pubblica
-    # ------------------------------------------------------------------
+    def __init__(self, canvases: list["ZoomableChartCanvas"]) -> None:
+        self._canvases = list(canvases)
+        # Collega ogni canvas con tutti gli altri
+        for i, canvas in enumerate(self._canvases):
+            peers = [c for j, c in enumerate(self._canvases) if j != i]
+            if peers:
+                canvas.sync_with(*peers)
 
     def reset_all(self) -> None:
-        """Ripristina la vista autoscale su tutti gli assi del gruppo."""
-        for ax in self._axes:
-            ax.autoscale()
-            ax.figure.canvas.draw_idle()
+        """Ripristina la vista fit-to-canvas su tutti i canvas del gruppo."""
+        for canvas in self._canvases:
+            canvas._reset_fit()
+
+
+# ---------------------------------------------------------------------------
+# Alias di retrocompatibilità: il vecchio nome LinkedAxesGroup viene mantenuto
+# per non richiedere modifiche ad altri moduli che potrebbero importarlo.
+# ---------------------------------------------------------------------------
+LinkedAxesGroup = LinkedChartGroup

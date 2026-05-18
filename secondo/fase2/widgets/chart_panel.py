@@ -1,18 +1,18 @@
 """
 widgets/chart_panel.py
 ----------------------
-Factory function per creare un pannello grafico Tkinter + matplotlib.
+Factory function per creare un pannello grafico Tkinter con ZoomableChartCanvas.
 
-Ogni pannello è un LabelFrame contenente:
-  - una Figure matplotlib con un singolo Axes
-  - la NavigationToolbar2Tk (zoom a rettangolo, pan, reset, salvataggio)
+Ogni pannello è un LabelFrame contenente un ZoomableChartCanvas che gestisce
+il grafico matplotlib come immagine rasterizzata con zoom e pan nativi Tkinter.
+Questo approccio è cross-platform (Windows, macOS, Linux) e non richiede
+FigureCanvasTkAgg né NavigationToolbar2Tk, che su macOS causano freeze.
 """
 
 import tkinter as tk
 from tkinter import ttk
 
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from .zoomable_chart_canvas import ZoomableChartCanvas
 
 
 def make_chart_panel(
@@ -21,9 +21,9 @@ def make_chart_panel(
     draw_fn,
     fig_width: float = 5.5,
     fig_height: float = 3.5,
-) -> tuple[ttk.LabelFrame, FigureCanvasTkAgg, "plt.Axes"]:
+) -> tuple[ttk.LabelFrame, "ZoomableChartCanvas"]:
     """
-    Crea un LabelFrame con figura matplotlib e toolbar integrata.
+    Crea un LabelFrame con un ZoomableChartCanvas che mostra il grafico.
 
     Parameters
     ----------
@@ -35,27 +35,20 @@ def make_chart_panel(
 
     Returns
     -------
-    (frame, canvas_mpl, ax)
-      - frame      : il LabelFrame contenitore
-      - canvas_mpl : FigureCanvasTkAgg per gestire il ciclo di vita della figura
-      - ax         : l'Axes matplotlib per eventuali operazioni successive (es. linking)
+    (frame, chart_canvas)
+      - frame        : il LabelFrame contenitore
+      - chart_canvas : ZoomableChartCanvas con zoom/pan nativi e proprietà .fig
     """
     frame = ttk.LabelFrame(parent, text=title, padding=4)
 
-    fig = plt.Figure(figsize=(fig_width, fig_height), tight_layout=True)
-    fig.patch.set_facecolor("#f5f5f5")
-    ax = fig.add_subplot(111)
+    chart_canvas = ZoomableChartCanvas(
+        frame,
+        draw_fn=draw_fn,
+        fig_width=fig_width,
+        fig_height=fig_height,
+        background="#2b2b2b",
+        cursor="fleur",
+    )
+    chart_canvas.pack(fill=tk.BOTH, expand=True)
 
-    draw_fn(fig, ax)
-
-    canvas = FigureCanvasTkAgg(fig, master=frame)
-    canvas.draw()
-
-    # La toolbar richiede come parent il widget Tkinter (non la figura)
-    toolbar = NavigationToolbar2Tk(canvas, frame, pack_toolbar=False)
-    toolbar.update()
-
-    toolbar.pack(side=tk.TOP, fill=tk.X)
-    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
-    return frame, canvas, ax
+    return frame, chart_canvas

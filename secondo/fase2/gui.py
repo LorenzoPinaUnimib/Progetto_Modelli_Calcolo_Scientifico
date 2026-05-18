@@ -29,16 +29,17 @@ Struttura del progetto
     ├── tests.py            ← test numerici della specifica
     └── widgets/
         ├── __init__.py
-        ├── zoomable_canvas.py  ← Canvas con zoom e pan
-        ├── linked_axes.py      ← sincronizzazione assi matplotlib
-        └── chart_panel.py      ← factory pannello grafico + toolbar
+        ├── zoomable_canvas.py      ← Canvas immagine con zoom e pan
+        ├── zoomable_chart_canvas.py← Canvas grafico con zoom e pan (Agg)
+        ├── linked_axes.py          ← sincronizzazione canvas grafici
+        └── chart_panel.py          ← factory pannello grafico
 """
 
 import sys
 import argparse
 import tkinter as tk
 
-from constants import PARAM_F_MIN, PARAM_D_MIN
+from constants import PARAM_F_MIN, PARAM_D_MIN, WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT
 
 
 # ---------------------------------------------------------------------------
@@ -83,6 +84,16 @@ def main() -> None:
     # Import pesanti solo quando serve la GUI
     from app import DctCompressionApp
     root = tk.Tk()
+
+    # Adatta il minsize allo schermo disponibile (importante su macOS Retina)
+    sw = root.winfo_screenwidth()
+    sh = root.winfo_screenheight()
+    min_w = min(WINDOW_MIN_WIDTH,  int(sw * 0.85))
+    min_h = min(WINDOW_MIN_HEIGHT, int(sh * 0.85))
+    root.minsize(min_w, min_h)
+    # Centra la finestra allo startup
+    root.geometry(f"{min_w}x{min_h}+{(sw - min_w) // 2}+{(sh - min_h) // 2}")
+
     DctCompressionApp(root)
     root.mainloop()
 

@@ -8,13 +8,23 @@ Funzionalità:
   - pan trascinando con il tasto sinistro
   - doppio clic per tornare alla vista fit-to-canvas
   - sincronizzazione bidirezionale con un canvas gemello (metodo sync_with)
-  - supporto Windows (MouseWheel) e Linux/macOS (Button-4 / Button-5)
+  - supporto cross-platform: Windows (MouseWheel delta), macOS (MouseWheel
+    units), Linux (Button-4 / Button-5)
+
+Note macOS
+----------
+Su macOS il Cocoa event loop richiede che TUTTE le operazioni UI avvengano
+sul thread principale. Questa classe è progettata per essere usata solo dal
+main thread. Non chiamare metodi di questa classe da thread secondari.
 """
 
+import platform
 import tkinter as tk
-from PIL import ImageTk
+from PIL import Image, ImageTk
 
 from constants import ZOOM_FACTOR_IN, ZOOM_FACTOR_OUT, ZOOM_MIN, ZOOM_MAX
+
+_PLATFORM = platform.system()  # "Windows" | "Darwin" | "Linux"
 
 
 class ZoomableImageCanvas(tk.Canvas):
@@ -37,13 +47,24 @@ class ZoomableImageCanvas(tk.Canvas):
         self._synced_canvas: "ZoomableImageCanvas | None" = None
         self._syncing: bool = False
 
+        # Pending resize debounce id
+        self._resize_after_id: str | None = None
+
         self.bind("<ButtonPress-1>",   self._on_drag_start)
         self.bind("<B1-Motion>",       self._on_drag_move)
-        self.bind("<MouseWheel>",      self._on_mousewheel_windows)
-        self.bind("<Button-4>",        self._on_scroll_up_linux)
-        self.bind("<Button-5>",        self._on_scroll_down_linux)
         self.bind("<Double-Button-1>", self._on_reset_view)
         self.bind("<Configure>",       self._on_resize)
+
+        # Cross-platform scroll
+        if _PLATFORM == "Darwin":
+            # macOS: MouseWheel genera eventi con delta in "unità" (1 unità = 1 notch)
+            self.bind("<MouseWheel>", self._on_mousewheel_macos)
+        elif _PLATFORM == "Windows":
+            self.bind("<MouseWheel>", self._on_mousewheel_windows)
+        else:
+            # Linux / altri
+            self.bind("<Button-4>", self._on_scroll_up_linux)
+            self.bind("<Button-5>", self._on_scroll_down_linux)
 
     # ------------------------------------------------------------------
     # API pubblica
@@ -52,7 +73,7 @@ class ZoomableImageCanvas(tk.Canvas):
     def set_image(self, pil_image: "Image.Image") -> None:
         """Imposta una nuova immagine PIL e ne adatta la vista al canvas."""
         self._pil_image = pil_image
-        self._reset_fit()
+        self.reset_fit()
 
     def clear(self) -> None:
         """Rimuove l'immagine e pulisce il canvas."""
@@ -65,17 +86,27 @@ class ZoomableImageCanvas(tk.Canvas):
         self._synced_canvas  = other
         other._synced_canvas = self
 
+    def reset_fit(self) -> None:
+        """Adatta l'immagine alla dimensione del canvas mantenendo le proporzioni."""
+        if self._pil_image is None:
+            return
+        # Usa after_idle per garantire che le dimensioni siano disponibili (sicuro su macOS)
+        self.after_idle(self._do_reset_fit)
+
     # ------------------------------------------------------------------
     # Rendering interno
     # ------------------------------------------------------------------
 
-    def _reset_fit(self) -> None:
-        """Adatta l'immagine alla dimensione del canvas mantenendo le proporzioni."""
-        self.update_idletasks()
+    def _do_reset_fit(self) -> None:
+        """Calcolo effettivo del fit — chiamato sempre nell'idle loop."""
         if self._pil_image is None:
             return
-        cw = self.winfo_width()  or 400
-        ch = self.winfo_height() or 400
+        cw = self.winfo_width()
+        ch = self.winfo_height()
+        if cw <= 1 or ch <= 1:
+            # Il widget non è ancora visibile: riprova al prossimo idle
+            self.after(50, self._do_reset_fit)
+            return
         iw, ih = self._pil_image.size
         self._zoom_level = min(cw / iw, ch / ih, 1.0)
         scaled_w = iw * self._zoom_level
@@ -84,6 +115,9 @@ class ZoomableImageCanvas(tk.Canvas):
         self._image_offset_y = (ch - scaled_h) / 2.0
         self._render()
 
+    # Mantieni il vecchio nome privato per retrocompatibilità con chiamate interne
+    _reset_fit = reset_fit
+
     def _render(self) -> None:
         """Ridisegna l'immagine con il livello di zoom e l'offset correnti."""
         if self._pil_image is None:
@@ -91,7 +125,7 @@ class ZoomableImageCanvas(tk.Canvas):
         iw, ih = self._pil_image.size
         new_w = max(1, int(iw * self._zoom_level))
         new_h = max(1, int(ih * self._zoom_level))
-        scaled = self._pil_image.resize((new_w, new_h))
+        scaled = self._pil_image.resize((new_w, new_h), Image.NEAREST)
         self._tk_image = ImageTk.PhotoImage(scaled)
         self.delete("all")
         self.create_image(
@@ -100,7 +134,7 @@ class ZoomableImageCanvas(tk.Canvas):
         )
 
     # ------------------------------------------------------------------
-    # Calcolo coordinate
+    # Coordinate
     # ------------------------------------------------------------------
 
     def _image_point_from_canvas(self, cx: float, cy: float) -> tuple[float, float]:
@@ -117,32 +151,30 @@ class ZoomableImageCanvas(tk.Canvas):
     # Sincronizzazione
     # ------------------------------------------------------------------
 
-    def _apply_sync(self, zoom: float, img_px: float, img_py: float) -> None:
-        """Aggiorna questo canvas con i parametri di vista provenienti dal canvas gemello."""
+    def _apply_sync(self, zoom: float, img_px: float, img_py: float,
+                    anchor_cx: float, anchor_cy: float) -> None:
         if self._syncing:
             return
         self._syncing = True
         try:
-            cw = self.winfo_width()  or 400
-            ch = self.winfo_height() or 400
             new_zoom = max(ZOOM_MIN, min(ZOOM_MAX, zoom))
             self._zoom_level = new_zoom
             if self._pil_image is not None:
                 iw, ih = self._pil_image.size
-                self._image_offset_x = cw / 2.0 - img_px * iw * new_zoom
-                self._image_offset_y = ch / 2.0 - img_py * ih * new_zoom
+                self._image_offset_x = anchor_cx - img_px * iw * new_zoom
+                self._image_offset_y = anchor_cy - img_py * ih * new_zoom
             self._render()
         finally:
             self._syncing = False
 
     def _propagate_view(self, anchor_cx: float, anchor_cy: float) -> None:
-        """Propaga la vista corrente al canvas gemello centrandola su anchor."""
         if self._synced_canvas is None or self._synced_canvas._syncing:
             return
         if self._pil_image is None:
             return
         img_px, img_py = self._image_point_from_canvas(anchor_cx, anchor_cy)
-        self._synced_canvas._apply_sync(self._zoom_level, img_px, img_py)
+        self._synced_canvas._apply_sync(self._zoom_level, img_px, img_py,
+                                        anchor_cx, anchor_cy)
 
     # ------------------------------------------------------------------
     # Handler eventi
@@ -173,6 +205,11 @@ class ZoomableImageCanvas(tk.Canvas):
         self._propagate_view(x, y)
 
     def _on_mousewheel_windows(self, event: tk.Event) -> None:
+        """Windows: event.delta è multiplo di 120 (positivo = su)."""
+        self._zoom_at(event.x, event.y, ZOOM_FACTOR_IN if event.delta > 0 else ZOOM_FACTOR_OUT)
+
+    def _on_mousewheel_macos(self, event: tk.Event) -> None:
+        """macOS: event.delta è in unità di scroll (positivo = su)."""
         self._zoom_at(event.x, event.y, ZOOM_FACTOR_IN if event.delta > 0 else ZOOM_FACTOR_OUT)
 
     def _on_scroll_up_linux(self, event: tk.Event) -> None:
@@ -182,10 +219,13 @@ class ZoomableImageCanvas(tk.Canvas):
         self._zoom_at(event.x, event.y, ZOOM_FACTOR_OUT)
 
     def _on_reset_view(self, _event: tk.Event) -> None:
-        self._reset_fit()
+        self.reset_fit()
         cw = self.winfo_width()  or 400
         ch = self.winfo_height() or 400
         self._propagate_view(cw / 2.0, ch / 2.0)
 
     def _on_resize(self, _event: tk.Event) -> None:
-        self._render()
+        # Debounce: evita render multipli durante il ridimensionamento (causa freeze su macOS)
+        if self._resize_after_id is not None:
+            self.after_cancel(self._resize_after_id)
+        self._resize_after_id = self.after(30, self._render)

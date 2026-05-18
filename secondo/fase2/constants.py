@@ -4,13 +4,25 @@ constants.py
 Costanti di layout, testo e comportamento per la GUI di compressione DCT2.
 """
 
+import platform
+
 # ---------------------------------------------------------------------------
 # Finestra principale
 # ---------------------------------------------------------------------------
 
-WINDOW_TITLE        = "Compressione Immagini tramite DCT2"
-WINDOW_MIN_WIDTH    = 900
-WINDOW_MIN_HEIGHT   = 500
+WINDOW_TITLE = "Compressione Immagini tramite DCT2"
+
+# Dimensioni minime adattate alla piattaforma:
+# su macOS i display Retina piccoli (1280×800) non reggono 1200×900 pt.
+_SCREEN_FACTOR = 0.85  # usa al più l'85 % dello schermo logico
+_PLATFORM = platform.system()
+
+if _PLATFORM == "Darwin":
+    WINDOW_MIN_WIDTH  = 900
+    WINDOW_MIN_HEIGHT = 700
+else:
+    WINDOW_MIN_WIDTH  = 1200
+    WINDOW_MIN_HEIGHT = 900
 
 # ---------------------------------------------------------------------------
 # Etichette e testo dei widget
