@@ -6,6 +6,8 @@ from solvers import jacobi, gauss_seidel, gradient, cg
 
 def run_all_solvers(A, b, x_true, tol):
     """Esegue tutti i solutori monitorando tempo e memoria."""
+    
+    # Trasformazione di funzioni in elementi di array, per semplicità
     methods = {
         "Jacobi": jacobi.solve,
         "Gauss-Seidel": gauss_seidel.solve,
@@ -15,6 +17,7 @@ def run_all_solvers(A, b, x_true, tol):
     
     results = {}
     
+    # Esecuzione effettiva dei solver
     for name, solver in methods.items():
         print(f"Esecuzione {name} in corso...")
         
@@ -31,6 +34,7 @@ def run_all_solvers(A, b, x_true, tol):
         # Calcolo errore
         err = compute_relative_error(x_true, x_sol)
         
+        # Array degli output
         results[name] = {
             "err": err, 
             "iters": iters, 
@@ -40,6 +44,7 @@ def run_all_solvers(A, b, x_true, tol):
         
     return results
 
+# Dashboard è pertinente a main.py, la versione da riga di comando, non a gui.py
 def show_dashboard(results, title_suffix, tol):
     """Genera una dashboard con 3 grafici: Tempo, Iterazioni, Memoria e Errore."""
     names = list(results.keys())
