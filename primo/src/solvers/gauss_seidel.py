@@ -4,19 +4,29 @@ from scipy.sparse.linalg import spsolve_triangular
 import time
 
 def solve(A, b, tol, nmax=20000):
+    """
+    Metodo di Jacobi
+    INPUT  : A=matrice del sistema, b=termine noto,
+             tol=tolleranza, nmax=massimo numero di iterazioni
+    OUTPUT : x=soluzione, nit=numero di iterazioni, time=tempo trascorso
+    """
+
     M, N = A.shape
     
-    #Verifica matrice quadrata
+    # Verifica che la matrice sia quadrata
     if M != N:
-        print("Matrix A is not a square matrix")
+        print("La matrice passata in argomento non è quadrata, Gauß-Seidel non è applicabile")
         return None, 0, 0
 
-    # Creazione matrici e variabili usate durante la risoluzione
-    # Formato csr richiesto per l'efficienza
+    # Estrazione della matrice triangolare inferiore
     P = sp.tril(A, format='csr')
+    # Matrice superiore, inutilizzata (?)
     N = A - P
     
+    # Creazione del vettore della soluzione, composto da zeri, come da consegna
     x = np.zeros(M)
+
+    # Contatore per il numero di iterazioni
     nit = 0
 
     # Calcolo errore
@@ -25,17 +35,18 @@ def solve(A, b, tol, nmax=20000):
     # Salvataggio tempo di inizio
     start_time = time.perf_counter()
     
+    # Iterazione del metodo
     while err >= tol and nit < nmax:
         if nit % 1000 == 0:
             print("Gauss-Seidel: iterazione", nit)
         
-        # rhs = (b - B*xold)
+        # Calcolo del residuo
         rhs = b - A @ x
 
         # Risoluzione del sistema triangolare inferiore
         y = spsolve_triangular(P, rhs, lower=True)
 
-        # Calcolo nuova x
+        # Aggiornamento della soluzione
         x = x + y
 
         # Calcolo errore
