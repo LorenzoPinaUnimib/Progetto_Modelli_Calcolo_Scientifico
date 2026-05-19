@@ -107,13 +107,17 @@ def IDCT2(c, D_tr):
     return f
 
 def JPEG(img, N, M, grafico = True, triangolare = False):
-    D = calcola_D(N)
+    if (img is None or M > N or N <= 0 or M < 0):
+        print("I parametri passati non sono una configurazione valida")
+        return
 
     blocchi, righe, colonne = split(img, N)
 
     if (len(blocchi) == 0):
         print("Il numero di blocchi creato è 0, riprovare con N più piccolo")
         return
+    
+    D = calcola_D(N)
 
     c = DCT2(blocchi, D)
     tronca(c, M, triangolare)
@@ -139,4 +143,4 @@ def JPEG(img, N, M, grafico = True, triangolare = False):
 
 if __name__ == "__main__":
     img = apri_immagine("bridge.bmp")
-    JPEG(img, 16, 16, True, False)
+    JPEG(img, 5, 5, True, False)
