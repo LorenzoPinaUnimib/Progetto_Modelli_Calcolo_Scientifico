@@ -4,7 +4,7 @@ import os
 from PIL import Image
 import sys
 from PyQt6.QtWidgets import QApplication
-from ImageComparisonWindow import ImageComparisonWindow
+from helper.ImageComparisonWindow import ImageComparisonWindow
 
 def apri_immagine(name):
     # Apro l'immagine
@@ -138,5 +138,5 @@ def JPEG(img, N, M, grafico = True, triangolare = False):
         sys.exit(app.exec())
 
 if __name__ == "__main__":
-    img = apri_immagine("tonypitony.bmp")
-    JPEG(img, 10, 5, True, False)
+    img = apri_immagine("bridge.bmp")
+    JPEG(img, 16, 1, True, False)

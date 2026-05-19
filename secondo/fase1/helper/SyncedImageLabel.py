@@ -6,7 +6,7 @@ from PyQt6.QtGui import QPixmap, QImage
 from PyQt6.QtCore import Qt
 
 class SyncedImageLabel(QLabel):
-    """Label per immagini con pan/zoom"""
+    # Label per immagini con pan/zoom
     def __init__(self, img_array):
         super().__init__()
         self.original_img = img_array.astype(np.uint8)
@@ -16,14 +16,14 @@ class SyncedImageLabel(QLabel):
         self.last_mouse_x = 0
         self.last_mouse_y = 0
         self.dragging = False
-        self.first_resize = True  # Aggiungi questo flag
+        self.first_resize = True
         
         self.setMouseTracking(True)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.update_display()
     
     def update_display(self):
-        """Aggiorna il display con scale e pan attuali"""
+        # Aggiorna il display con scale e pan attuali
         h, w = self.original_img.shape
         new_w = int(w * self.scale)
         new_h = int(h * self.scale)
@@ -45,7 +45,7 @@ class SyncedImageLabel(QLabel):
         self.setPixmap(pixmap)
     
     def _apply_pan(self, img, img_w, img_h):
-        """Applica pan all'immagine"""
+        # Applica pan all'immagine
         label_w = self.width()
         label_h = self.height()
         
@@ -94,7 +94,7 @@ class SyncedImageLabel(QLabel):
             self.update_display()
     
     def wheelEvent(self, event):
-        """Zoom con rotella del mouse, centrato sul puntatore"""
+        # Zoom con rotella del mouse, centrato sul puntatore
         zoom_factor = 1.1
         
         # Posizione del mouse rispetto alla label
@@ -120,7 +120,7 @@ class SyncedImageLabel(QLabel):
         else:
             self.scale /= zoom_factor
         
-        self.scale = max(0.1, min(5.0, self.scale))
+        self.scale = max(0.1, min(50.0, self.scale))
         
         # Aggiusta il pan mantenendo il punto sotto il mouse fisso
         scale_ratio = self.scale / old_scale
@@ -147,7 +147,7 @@ class SyncedImageLabel(QLabel):
         self.update_display()
     
     def sync_view(self, other_label):
-        """Sincronizza scale e pan con un'altra label"""
+        # Sincronizza scale e pan con un'altra label
         other_label.scale = self.scale
         other_label.pan_x = self.pan_x
         other_label.pan_y = self.pan_y

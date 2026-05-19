@@ -1,13 +1,12 @@
-# Funzione creata con IA per sincronizzare gli zoom e pan sulle due immagini
 from PyQt6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PyQt6.QtCore import Qt
-from SyncedImageLabel import SyncedImageLabel
+from helper.SyncedImageLabel import SyncedImageLabel
 
 class ImageComparisonWindow(QMainWindow):
     def __init__(self, img1, img2, title1="Originale", title2="Ricostruita"):
         super().__init__()
         
-        self.setWindowTitle("JPEG Compression Viewer")
+        self.setWindowTitle("Visualizzatore risultato compressione JPEG")
         self.setGeometry(100, 100, 1400, 700)
         
         # Crea widget centrale
