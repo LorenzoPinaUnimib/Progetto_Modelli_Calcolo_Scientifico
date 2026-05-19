@@ -38,19 +38,9 @@ METHOD_COLORS = {
     "Gradiente Coniugato":"#fbbf24",
 }
 
-# Funzioni di supporto
-def _add_project_root_to_path():
-    """Aggiunge la cartella contenente gui.py al sys.path."""
-    root = os.path.dirname(os.path.abspath(__file__))
-    if root not in sys.path:
-        sys.path.insert(0, root)
-
-
 def _load_solvers():
     """Importa i solver dal progetto; ritorna un dict name→solve_fn."""
-    _add_project_root_to_path()
     try:
-
         from utils.matrix_io import load_mtx
         from solvers import jacobi, gauss_seidel, gradient, cg
 
@@ -68,10 +58,10 @@ def _load_solvers():
 
 def _compute_relative_error(x_true, x_comp):
     if x_comp is None:
-        return float("nan")
+        return float("NaN")
     num = np.linalg.norm(x_true - x_comp)
     den = np.linalg.norm(x_true)
-    return num / den if den else float("nan")
+    return num / den if den else float("NaN")
 
 # Thread di esecuzione
 class SolverThread(threading.Thread):
@@ -100,12 +90,12 @@ class SolverThread(threading.Thread):
             n = A.shape[0]
             x_true = np.ones(n)
             b = A @ x_true
-            self.on_progress(f"Matrice caricata: {n}×{n} | {A.nnz} elementi non-zero")
+            self.on_progress(f"Matrice caricata: {n}x{n} | {A.nnz} elementi non-zero ({A.nnz / (n * n):.2f}%)")
 
             # Esecuzione dei risolutori
             results = {}
             for name, solver in methods.items():
-                self.on_progress(f"Esecuzione {name}…")
+                self.on_progress(f"Esecuzione {name}...")
                 tracemalloc.start()
                 try:
                     x_sol, iters, elapsed = solver(A, b, self.tol)
