@@ -35,21 +35,20 @@ def solve(A, b, tol, nmax=20000):
         print("Impossibile determinare se la matrice è definita positiva (mancata convergenza degli autovalori).")
         return None, 0, 0
 
-    # Creazione dei vettori della soluzione, composto da zeri, come da consegna
-    xold = np.zeros(M)
-    xnew = np.zeros(M)
+    # Creazione del vettore della soluzione, composto da zeri, come da consegna
+    x = np.zeros(M)
     
     # Contatore per il numero di iterazioni
     nit = 0
 
     # Calcolo residuo iniziale
-    r = b - A @ xold
+    r = b - A @ x
 
     # Inizializzazione della direzione di ricerca
-    p = r.copy()
+    d = r.copy()
     
-    # Errore iniziale, con check per evitare divisioni per zero se x è nullo
-    err = np.linalg.norm(r) / (np.linalg.norm(xold) if np.linalg.norm(xold) != 0 else 1)
+    # Errore iniziale
+    err = np.linalg.norm(A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
     
     # Salvataggio tempo di inizio
     start_time = time.perf_counter()
@@ -60,28 +59,25 @@ def solve(A, b, tol, nmax=20000):
             print("Gradiente Coniugato: iterazione", nit)
 
         # Calcolo del passo ottimale
-        Ap = A @ p
-        alpha = np.dot(r, r) / np.dot(p, Ap)
+        y = A @ d
+        step = np.dot(d, r) / np.dot(d, y)
         
         # Aggiornamento della soluzione
-        xnew = xold + alpha * p
+        x = x + step * d
 
         # Aggiornamento del residuo
-        r_new = r - alpha * Ap
+        r = b - A @ x
         
         # Calcolo della nuova direzione di ricerca
-        beta = np.dot(r_new, r_new) / np.dot(r, r)
-        p = r_new + beta * p
-        
+        beta = np.dot(d, A @ r) / np.dot(d, y)
+        d = r - beta * d
+
         # Aggiornamento residuo e errore per il prossimo ciclo
-        r = r_new
-        err = np.linalg.norm(b - A @ xnew) / np.linalg.norm(xnew)
+        err = np.linalg.norm(A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
         
-        xold = xnew
         nit += 1
     
     # Calcolo tempo trascorso
     elapsed_time = time.perf_counter() - start_time
-    xk = xold
     
-    return xk, nit, elapsed_time
+    return x, nit, elapsed_time
