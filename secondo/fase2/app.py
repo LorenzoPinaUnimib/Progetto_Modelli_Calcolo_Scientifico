@@ -296,7 +296,7 @@ class DctCompressionApp:
         """
         Crea 4 pannelli grafici interattivi sotto alle anteprime immagine.
 
-        Griglia 2×2:
+        Griglia 2x2:
           [0,0] Istogramma originale    [0,1] Istogramma compressa
           [1,0] Frequenze DCT originali [1,1] Frequenze DCT troncate
 
@@ -419,7 +419,6 @@ class DctCompressionApp:
         # ---- Aggiorna scroll e salta ai grafici -------------------------
         self._inner_frame.update_idletasks()
         self._main_canvas.configure(scrollregion=self._main_canvas.bbox("all"))
-        self._main_canvas.yview_moveto(1.0)
 
     # ------------------------------------------------------------------
     # Gestori degli eventi utente
