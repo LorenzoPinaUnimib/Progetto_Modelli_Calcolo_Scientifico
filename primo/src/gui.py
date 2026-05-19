@@ -1,22 +1,3 @@
-"""
-gui.py — Interfaccia grafica Tkinter per l'analisi dei solver iterativi.
-
-Struttura del progetto attesa:
-  main.py  (opzionale, non più necessario)
-  gui.py   ← questo file, da mettere nella root
-  utils/
-      matrix_io.py
-      metrics.py
-      viewer.py   (usato solo per run_all_solvers)
-  solvers/
-      jacobi.py
-      gauss_seidel.py
-      gradient.py
-      cg.py
-
-Avvio:  python gui.py
-"""
-
 import sys
 import os
 import threading
@@ -57,11 +38,7 @@ METHOD_COLORS = {
     "Gradiente Coniugato":"#fbbf24",
 }
 
-
-# ---------------------------------------------------------------------------
 # Funzioni di supporto
-# ---------------------------------------------------------------------------
-
 def _add_project_root_to_path():
     """Aggiunge la cartella contenente gui.py al sys.path."""
     root = os.path.dirname(os.path.abspath(__file__))
@@ -70,11 +47,13 @@ def _add_project_root_to_path():
 
 
 def _load_solvers():
-    """Importa i solver dal progetto. Ritorna un dict name→solve_fn."""
+    """Importa i solver dal progetto; ritorna un dict name→solve_fn."""
     _add_project_root_to_path()
     try:
+
         from utils.matrix_io import load_mtx
         from solvers import jacobi, gauss_seidel, gradient, cg
+
         return load_mtx, {
             "Jacobi":              jacobi.solve,
             "Gauss-Seidel":        gauss_seidel.solve,
@@ -87,7 +66,6 @@ def _load_solvers():
             "Assicurati di avere la cartella utils/ e solvers/ nella stessa directory di gui.py."
         )
 
-
 def _compute_relative_error(x_true, x_comp):
     if x_comp is None:
         return float("nan")
@@ -95,35 +73,36 @@ def _compute_relative_error(x_true, x_comp):
     den = np.linalg.norm(x_true)
     return num / den if den else float("nan")
 
-
-# ---------------------------------------------------------------------------
 # Thread di esecuzione
-# ---------------------------------------------------------------------------
-
 class SolverThread(threading.Thread):
     """Esegue tutti i solver in background e notifica la GUI al termine."""
 
+    # Inizializzazione
     def __init__(self, mtx_path, tol, on_progress, on_done, on_error):
         super().__init__(daemon=True)
         self.mtx_path    = mtx_path
         self.tol         = tol
-        self.on_progress = on_progress   # callback(str)
-        self.on_done     = on_done       # callback(dict)
-        self.on_error    = on_error      # callback(str)
+        self.on_progress = on_progress
+        self.on_done     = on_done
+        self.on_error    = on_error
 
+    # Esecuzione
     def run(self):
         import tracemalloc
+
         try:
+            # Carico i vari risolutori
             load_mtx, methods = _load_solvers()
 
+            # Carico matrice e faccio un analisi preliminare
             self.on_progress("Caricamento matrice…")
             A = load_mtx(self.mtx_path)
             n = A.shape[0]
             x_true = np.ones(n)
             b = A @ x_true
-
             self.on_progress(f"Matrice caricata: {n}×{n} | {A.nnz} elementi non-zero")
 
+            # Esecuzione dei risolutori
             results = {}
             for name, solver in methods.items():
                 self.on_progress(f"Esecuzione {name}…")
@@ -139,9 +118,11 @@ class SolverThread(threading.Thread):
                     }
                     continue
 
+                # Calcolo memoria utilizzata
                 _, peak_mem = tracemalloc.get_traced_memory()
                 tracemalloc.stop()
 
+                # Calcolo errori
                 err = _compute_relative_error(x_true, x_sol)
                 results[name] = {
                     "err":          err,
@@ -156,15 +137,12 @@ class SolverThread(threading.Thread):
         except Exception as exc:
             self.on_error(traceback.format_exc())
 
-
-# ---------------------------------------------------------------------------
 # Finestra principale
-# ---------------------------------------------------------------------------
-
 class App(tk.Tk):
+    # Inizializzazione e applicazione stili
     def __init__(self):
         super().__init__()
-        self.title("Solver Iterativi — Analisi Comparativa")
+        self.title("Primo assignment - analisi comparativa")
         self.geometry("1280x800")
         self.minsize(900, 620)
         self.configure(bg=BG)
@@ -176,10 +154,6 @@ class App(tk.Tk):
 
         self._build_ui()
         self._configure_dnd()
-
-    # ------------------------------------------------------------------
-    # Stile ttk
-    # ------------------------------------------------------------------
 
     def _apply_style(self):
         s = ttk.Style(self)
@@ -230,36 +204,32 @@ class App(tk.Tk):
               background=[("selected", BG)],
               foreground=[("selected", TEXT)])
 
-    # ------------------------------------------------------------------
-    # Layout
-    # ------------------------------------------------------------------
-
+    # Costruzione della finestra effettiva
     def _build_ui(self):
-        # ── Colonna sinistra (controlli)
+        # Colonna sinistra (controlli)
         left = ttk.Frame(self, style="Panel.TFrame", width=260)
         left.pack(side="left", fill="y", padx=(12, 0), pady=12)
         left.pack_propagate(False)
         self._build_left_panel(left)
 
-        # ── Colonna destra (output)
+        # Colonna destra (output)
         right = ttk.Frame(self)
         right.pack(side="left", fill="both", expand=True, padx=12, pady=12)
         self._build_right_panel(right)
 
-    # ── Pannello sinistro ─────────────────────────────────────────────
-
+    # Pannello sinistro
     def _build_left_panel(self, parent):
         pad = dict(padx=16, pady=6)
 
         # Titolo
-        tk.Label(parent, text="Solver Iterativi", font=("Segoe UI Semibold", 14),
+        tk.Label(parent, text="Primo assignment", font=("Segoe UI Semibold", 14),
                  fg=TEXT, bg=PANEL).pack(anchor="w", padx=16, pady=(18, 2))
         tk.Label(parent, text="Analisi comparativa metodi", font=FONT_SMALL,
                  fg=SUBTEXT, bg=PANEL).pack(anchor="w", padx=16, pady=(0, 14))
 
         ttk.Separator(parent, orient="horizontal").pack(fill="x", padx=16, pady=4)
 
-        # --- Selezione file
+        # Selezione file
         tk.Label(parent, text="File matrice (.mtx)", font=FONT_LABEL,
                  fg=SUBTEXT, bg=PANEL).pack(anchor="w", **pad)
 
@@ -271,7 +241,7 @@ class App(tk.Tk):
 
         self._drop_label = tk.Label(
             self._drop_frame,
-            text="↓  Trascina qui il file .mtx",
+            text="↓  In attesa di file .mtx",
             font=FONT_SMALL, fg=SUBTEXT, bg=BORDER,
             wraplength=200, justify="center",
         )
@@ -290,7 +260,7 @@ class App(tk.Tk):
 
         ttk.Separator(parent, orient="horizontal").pack(fill="x", padx=16, pady=4)
 
-        # --- Tolleranza
+        # Tolleranza
         tk.Label(parent, text="Tolleranza", font=FONT_LABEL,
                  fg=SUBTEXT, bg=PANEL).pack(anchor="w", **pad)
 
@@ -300,14 +270,9 @@ class App(tk.Tk):
         self._tol_entry = ttk.Entry(tol_frame, textvariable=self._tol_var, width=14)
         self._tol_entry.pack(side="left", fill="x", expand=True)
 
-        # Preset buttons
-        #for val in ("1e-4", "1e-6", "1e-8"):
-         #   ttk.Button(tol_frame, text=val, width=5,
-          #             command=lambda v=val: self._tol_var.set(v)).pack(side="left", padx=2)
-
         ttk.Separator(parent, orient="horizontal").pack(fill="x", padx=16, pady=10)
 
-        # --- Pulsante Esegui
+        # Pulsante esecuzione
         self._run_btn = ttk.Button(parent, text="▶  Esegui Solver",
                                     style="Run.TButton",
                                     command=self._run_solvers)
@@ -330,8 +295,7 @@ class App(tk.Tk):
         tk.Label(parent, text="Metodi stationary + Krylov",
                  font=FONT_SMALL, fg=BORDER, bg=PANEL).pack(pady=(0, 12))
 
-    # ── Pannello destro ───────────────────────────────────────────────
-
+    # Pannello destro
     def _build_right_panel(self, parent):
         self._notebook = ttk.Notebook(parent)
         self._notebook.pack(fill="both", expand=True)
@@ -351,8 +315,7 @@ class App(tk.Tk):
         self._notebook.add(self._tab_log, text="  Log  ")
         self._build_log_tab(self._tab_log)
 
-    # ── Tab grafici ───────────────────────────────────────────────────
-
+    # Tab grafici
     def _build_charts_tab(self, parent):
         self._fig = plt.Figure(figsize=(10, 7), facecolor=BG)
         self._canvas = FigureCanvasTkAgg(self._fig, master=parent)
@@ -451,8 +414,7 @@ class App(tk.Tk):
 
         self._canvas.draw()
 
-    # ── Tab tabella ───────────────────────────────────────────────────
-
+    # Tab tabella
     def _build_table_tab(self, parent):
         cols = ("Metodo", "Iterazioni", "Tempo (s)", "Errore Rel.", "Memoria (MB)", "Stato")
         self._tree = ttk.Treeview(parent, columns=cols, show="headings",
@@ -484,8 +446,7 @@ class App(tk.Tk):
                 "✗ Fallito" if r.get("failed") else "✓ OK",
             ), tags=(tag,))
 
-    # ── Tab log ───────────────────────────────────────────────────────
-
+    # Tab log
     def _build_log_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill="both", expand=True, padx=8, pady=8)
@@ -500,7 +461,7 @@ class App(tk.Tk):
         vsb.pack(side="right", fill="y")
         self._log_text.pack(fill="both", expand=True)
 
-        # Redirect stdout → log
+        # Redirect dal log CLI a log GUI
         sys.stdout = _TextRedirector(self._log_text, self)
 
     def _log(self, msg):
@@ -509,16 +470,11 @@ class App(tk.Tk):
         self._log_text.see("end")
         self._log_text.configure(state="disabled")
 
-    # ------------------------------------------------------------------
-    # Drag-and-drop (tkinterdnd2 opzionale, fallback nativo)
-    # ------------------------------------------------------------------
-
+    # Drag-and-drop - dà errori strani, rimarrà senza
     def _configure_dnd(self):
         try:
-            from tkinterdnd2 import DND_FILES
-            self._drop_frame.drop_target_register(DND_FILES)
-            self._drop_frame.dnd_bind("<<Drop>>", self._on_dnd_drop)
-            self._drop_label.configure(text="↓  Trascina .mtx qui\n   oppure clicca")
+            self._drop_frame.dnd_bind('<<Drop>>', self._on_dnd_drop)
+            self._drop_label.configure(text="↓  In attesa di file .mtx")
         except (ImportError, AttributeError):
             # tkinterdnd2 non disponibile: solo click per browse
             pass
@@ -531,10 +487,7 @@ class App(tk.Tk):
             messagebox.showerror("Formato non valido",
                                   "Seleziona un file .mtx valido.")
 
-    # ------------------------------------------------------------------
     # Azioni
-    # ------------------------------------------------------------------
-
     def _browse_file(self):
         path = filedialog.askopenfilename(
             title="Seleziona matrice .mtx",
@@ -612,11 +565,7 @@ class App(tk.Tk):
         self._log("\n[ERRORE]\n" + tb)
         messagebox.showerror("Errore", "Si è verificato un errore.\nControlla il tab Log.")
 
-
-# ---------------------------------------------------------------------------
 # Redirect stdout → widget Text
-# ---------------------------------------------------------------------------
-
 class _TextRedirector:
     def __init__(self, widget, app):
         self._widget = widget
@@ -635,11 +584,7 @@ class _TextRedirector:
     def flush(self):
         pass
 
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
-
+# Entrypoint
 if __name__ == "__main__":
     app = App()
     app.mainloop()
