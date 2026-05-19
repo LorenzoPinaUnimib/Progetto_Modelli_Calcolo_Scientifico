@@ -7,8 +7,15 @@ from PyQt6.QtWidgets import QApplication
 from helper.ImageComparisonWindow import ImageComparisonWindow
 
 def apri_immagine(name):
+    percorso = os.path.join(__file__[:-14], "dati/", name)
+
+    # Mostro avviso se il file non esiste
+    if not os.path.exists(percorso):
+        print(f"Errore: File immagine non trovato: {percorso}")
+        return None
+
     # Apro l'immagine
-    img = np.array(Image.open(os.path.join(__file__[:-14], "dati/", name)).convert("L"), dtype=np.uint8)
+    img = np.array(Image.open(percorso).convert("L"), dtype=np.uint8)
 
     return img
 
@@ -142,5 +149,5 @@ def JPEG(img, N, M, grafico = True, triangolare = False):
         sys.exit(app.exec())
 
 if __name__ == "__main__":
-    img = apri_immagine("bridge.bmp")
+    img = apri_immagine("pomq.bmp")
     JPEG(img, 5, 5, True, False)
