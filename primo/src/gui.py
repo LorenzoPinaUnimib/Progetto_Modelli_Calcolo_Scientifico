@@ -376,7 +376,7 @@ class App(tk.Tk):
             for bar, val in zip(bars, values):
                 if not (np.isnan(val) or val == 0):
                     ax.text(bar.get_x() + bar.get_width() / 2,
-                            bar.get_height() * 1.02,
+                            bar.get_height(),
                             fmt.format(val),
                             ha="center", va="bottom",
                             color=TEXT, fontsize=7)
@@ -403,7 +403,7 @@ class App(tk.Tk):
         for bar, val in zip(bars3, errors):
             if not np.isnan(val):
                 ax2.text(bar.get_x() + bar.get_width() / 2,
-                         bar.get_height() * 1.5,
+                         bar.get_height(),
                          f"{val:.1e}",
                          ha="center", va="bottom",
                          color=TEXT, fontsize=7)
