@@ -292,7 +292,7 @@ class App(tk.Tk):
         ttk.Frame(parent, style="Panel.TFrame").pack(expand=True, fill="both")
 
         # Footer
-        tk.Label(parent, text="Progetto a cura di Simone Rancati,\n Pina Lorenzo e Piovanelli Michele",
+        tk.Label(parent, text="Progetto a cura di Rancati Simone,\n Pina Lorenzo e Piovanelli Michele",
                  font=FONT_SMALL, fg=BORDER, bg=PANEL).pack(pady=(0, 12))
 
     # Pannello destro
