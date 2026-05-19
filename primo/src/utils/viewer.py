@@ -1,6 +1,4 @@
-import matplotlib.pyplot as plt
 import tracemalloc
-import numpy as np
 from utils.metrics import compute_relative_error
 from solvers import jacobi, gauss_seidel, gradient, cg
 

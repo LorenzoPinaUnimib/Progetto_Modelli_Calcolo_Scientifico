@@ -9,7 +9,7 @@ Avvio normale (GUI)::
 
     python gui.py
 
-Modalità test numerici (DCT 1D e DCT2 su blocco 8×8)::
+Modalità test numerici (DCT 1D e DCT2 su blocco 8x8)::
 
     python gui.py --test
 
@@ -72,7 +72,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--test", action="store_true",
-        help="Esegue i test numerici della specifica (DCT 1D e DCT2 8×8) e termina.",
+        help="Esegue i test numerici della specifica (DCT 1D e DCT2 8x8) e termina.",
     )
     args = parser.parse_args()
 

@@ -124,7 +124,7 @@ def _test_dct_1d() -> bool:
         f"atteso={_EXPECTED_DCT1D[worst_idx]:.4f}, "
         f"errore assoluto={abs_err[worst_idx]:.4f})"
     )
-    print(f"  Esito      : {'\u2713 PASSATO' if passed else '\u2717 FALLITO'}")
+    print(f"  Esito      : {'PASSATO' if passed else 'FALLITO'}")
     print()
     return passed
 
@@ -158,7 +158,7 @@ def _test_dct_2d() -> bool:
         f"atteso={_EXPECTED_DCT2D[worst_idx]:.4f}, "
         f"errore assoluto={abs_err[worst_idx]:.4f})"
     )
-    print(f"  Esito      : {'\u2713 PASSATO' if passed else '\u2717 FALLITO'}")
+    print(f"  Esito      : {'PASSATO' if passed else 'FALLITO'}")
     print()
     return passed
 
@@ -176,7 +176,7 @@ def run_tests() -> None:
     print(sep)
     print(
         f"RISULTATO COMPLESSIVO: "
-        f"{'\u2713 TUTTI I TEST PASSATI' if all_passed else '\u2717 ALCUNI TEST FALLITI'}"
+        f"{'TUTTI I TEST PASSATI' if all_passed else 'ALCUNI TEST FALLITI'}"
     )
     print(sep)
 

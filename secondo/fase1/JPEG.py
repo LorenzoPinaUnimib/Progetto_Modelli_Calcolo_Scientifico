@@ -139,4 +139,4 @@ def JPEG(img, N, M, grafico = True, triangolare = False):
 
 if __name__ == "__main__":
     img = apri_immagine("bridge.bmp")
-    JPEG(img, 16, 1, True, False)
+    JPEG(img, 16, 16, True, False)
