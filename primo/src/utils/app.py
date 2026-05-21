@@ -29,7 +29,7 @@ class App(tk.Tk):
         self._apply_style()
 
         self._mtx_path  = tk.StringVar(value="")
-        self._tol_var   = tk.StringVar(value="1e-4")
+        self._tol_var   = tk.StringVar(value="10e-4")
         self._results   = None
 
         self._build_ui()
