@@ -7,11 +7,12 @@ Utilizzo
 --------
 Avvio normale (GUI)::
 
-    python gui.py
+    python fase2/run.py           ← raccomandato
+    python fase2/gui.py           ← funziona anche direttamente
 
 Modalità test numerici (DCT 1D e DCT2 su blocco 8x8)::
 
-    python gui.py --test
+    python fase2/run.py --test
 
 Dipendenze esterne: tkinter (stdlib), Pillow, numpy, scipy, matplotlib.
 
@@ -19,23 +20,41 @@ Struttura del progetto
 ----------------------
 ::
 
-    fase2/
-    ├── gui.py              ← entry point (questo file)
-    ├── app.py              ← DctCompressionApp (finestra principale)
-    ├── constants.py        ← costanti di layout e testo
-    ├── dct_compression.py  ← algoritmo DCT block-by-block
-    ├── dct_analysis.py     ← analisi frequenze DCT per i grafici
-    ├── image_utils.py      ← caricamento/salvataggio BMP
-    ├── tests.py            ← test numerici della specifica
-    └── widgets/
-        ├── __init__.py
-        ├── zoomable_canvas.py      ← Canvas immagine con zoom e pan
-        ├── zoomable_chart_canvas.py← Canvas grafico con zoom e pan (Agg)
-        ├── linked_axes.py          ← sincronizzazione canvas grafici
-        └── chart_panel.py          ← factory pannello grafico
+    secondo/
+    ├── constants.py            ← costanti condivise tra le fasi
+    ├── widgets/                ← widget UI condivisi tra le fasi
+    │   ├── __init__.py
+    │   ├── zoomable_canvas.py
+    │   ├── zoomable_chart_canvas.py
+    │   ├── linked_axes.py
+    │   └── chart_panel.py
+    ├── fase1/
+    │   ├── 1D_base.py
+    │   ├── JPEG.py
+    │   └── run.py              ← launcher fase1
+    └── fase2/
+        ├── gui.py              ← entry point fase2 (questo file)
+        ├── run.py              ← launcher fase2 (raccomandato)
+        ├── app.py
+        ├── dct_compression.py
+        ├── dct_analysis.py
+        ├── image_utils.py
+        └── tests.py
 """
 
 import sys
+import os
+
+# Assicura che la root 'secondo/' sia nel path per importare widgets/ e constants.py
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+# Assicura che fase2/ sia nel path per importare i moduli locali
+_FASE2 = os.path.dirname(os.path.abspath(__file__))
+if _FASE2 not in sys.path:
+    sys.path.insert(0, _FASE2)
+
 import argparse
 import tkinter as tk
 

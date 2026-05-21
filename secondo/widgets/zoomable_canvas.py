@@ -120,19 +120,52 @@ class ZoomableImageCanvas(tk.Canvas):
     _reset_fit = reset_fit
 
     def _render(self) -> None:
-        """Ridisegna l'immagine con il livello di zoom e l'offset correnti."""
         if self._pil_image is None:
             return
+
+        # 1. Dimensioni del Canvas e dell'Immagine Originale
+        cw = self.winfo_width()
+        ch = self.winfo_height()
         iw, ih = self._pil_image.size
-        new_w = max(1, int(iw * self._zoom_level))
-        new_h = max(1, int(ih * self._zoom_level))
-        scaled = self._pil_image.resize((new_w, new_h), Image.NEAREST)
+
+        # 2. Calcoliamo i bordi dell'area visibile (in pixel dell'immagine originale)
+        # Troviamo dove si trova il "punto 0,0" del canvas rispetto all'immagine
+        x0 = -self._image_offset_x / self._zoom_level
+        y0 = -self._image_offset_y / self._zoom_level
+        x1 = x0 + cw / self._zoom_level
+        y1 = y0 + ch / self._zoom_level
+
+        # 3. Applichiamo i limiti per non andare fuori dall'immagine
+        left   = max(0, int(x0))
+        top    = max(0, int(y0))
+        right  = min(iw, int(x1) + 1)
+        bottom = min(ih, int(y1) + 1)
+
+        if left >= right or top >= bottom:
+            self.delete("all")
+            return
+
+        # 4. RITAGLIO: Prendiamo solo la parte visibile
+        crop = self._pil_image.crop((left, top, right, bottom))
+
+        # 5. RESIZE: Ingrandiamo solo il ritaglio
+        # Calcoliamo quanto deve essere grande il pezzetto sul canvas
+        display_w = int((right - left) * self._zoom_level)
+        display_h = int((bottom - top) * self._zoom_level)
+        
+        if display_w <= 0 or display_h <= 0:
+            return
+
+        scaled = crop.resize((display_w, display_h), Image.NEAREST)
         self._tk_image = ImageTk.PhotoImage(scaled)
+
+        # 6. DISEGNO: Calcoliamo la posizione corretta sul canvas
+        # Dobbiamo compensare il fatto che il ritaglio potrebbe non partire da (0,0)
+        canvas_x = int(left * self._zoom_level + self._image_offset_x)
+        canvas_y = int(top * self._zoom_level + self._image_offset_y)
+
         self.delete("all")
-        self.create_image(
-            int(self._image_offset_x), int(self._image_offset_y),
-            anchor=tk.NW, image=self._tk_image,
-        )
+        self.create_image(canvas_x, canvas_y, anchor=tk.NW, image=self._tk_image)
 
     # ------------------------------------------------------------------
     # Coordinate

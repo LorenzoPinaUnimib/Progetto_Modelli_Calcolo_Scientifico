@@ -29,8 +29,6 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")          # backend non-interattivo — niente finestre Tk interne
 import matplotlib.pyplot as plt
 
 from image_utils import load_grayscale_bmp, numpy_array_to_pil_image
@@ -211,15 +209,16 @@ class DctCompressionApp:
         """
         self._main_canvas.yview_scroll(-1 if event.delta > 0 else 1, "units")
 
-    def _register_child_scroll(self, widget: tk.Widget) -> None:
+    def _register_child_scroll(self, widget: "ZoomableChartCanvas") -> None:
         """
-        Registra i binding di scroll sul widget dato in modo che lo scroll
-        raggiunga il canvas principale. Da chiamare su ogni ZoomableChartCanvas
-        creato dinamicamente.
+        Registra i binding di scroll sul widget Tk interno del canvas matplotlib
+        in modo che lo scroll raggiunga il canvas principale.
+        Il binding usa add=True per non sovrascrivere gli handler di zoom.
         """
-        widget.bind("<MouseWheel>", self._on_child_scroll_mousewheel, add=True)
-        widget.bind("<Button-4>",   self._on_main_scroll_up_linux,    add=True)
-        widget.bind("<Button-5>",   self._on_main_scroll_down_linux,  add=True)
+        inner = widget._tk_widget
+        inner.bind("<MouseWheel>", self._on_child_scroll_mousewheel, add=True)
+        inner.bind("<Button-4>",   self._on_main_scroll_up_linux,    add=True)
+        inner.bind("<Button-5>",   self._on_main_scroll_down_linux,  add=True)
 
     # ------------------------------------------------------------------
     # Threading: esecuzione asincrona senza freeze del main thread
@@ -271,14 +270,8 @@ class DctCompressionApp:
     # ------------------------------------------------------------------
 
     def _remove_charts(self) -> None:
-        """Distrugge tutti i widget e le figure matplotlib dei grafici precedenti."""
+        """Distrugge tutti i widget dei grafici precedenti."""
         self._linked_chart_groups.clear()
-        # Chiude le figure matplotlib ancora in vita nei canvas (main thread — sicuro)
-        figs_to_close = [
-            c.fig for c in self._chart_canvases if c.fig is not None
-        ]
-        for fig in figs_to_close:
-            plt.close(fig)
         self._chart_canvases.clear()
         if self._charts_outer_frame is not None:
             self._charts_outer_frame.destroy()
@@ -296,7 +289,7 @@ class DctCompressionApp:
         """
         Crea 4 pannelli grafici interattivi sotto alle anteprime immagine.
 
-        Griglia 2x2:
+        Griglia 2×2:
           [0,0] Istogramma originale    [0,1] Istogramma compressa
           [1,0] Frequenze DCT originali [1,1] Frequenze DCT troncate
 
@@ -419,6 +412,7 @@ class DctCompressionApp:
         # ---- Aggiorna scroll e salta ai grafici -------------------------
         self._inner_frame.update_idletasks()
         self._main_canvas.configure(scrollregion=self._main_canvas.bbox("all"))
+        self._main_canvas.yview_moveto(1.0)
 
     # ------------------------------------------------------------------
     # Gestori degli eventi utente

@@ -3,10 +3,9 @@ widgets/chart_panel.py
 ----------------------
 Factory function per creare un pannello grafico Tkinter con ZoomableChartCanvas.
 
-Ogni pannello è un LabelFrame contenente un ZoomableChartCanvas che gestisce
-il grafico matplotlib come immagine rasterizzata con zoom e pan nativi Tkinter.
-Questo approccio è cross-platform (Windows, macOS, Linux) e non richiede
-FigureCanvasTkAgg né NavigationToolbar2Tk, che su macOS causano freeze.
+Ogni pannello è un LabelFrame contenente un ZoomableChartCanvas che usa
+FigureCanvasTkAgg embedded con zoom/pan sugli assi matplotlib (xlim/ylim).
+Nessuna NavigationToolbar2Tk — la toolbar non viene mai creata.
 """
 
 import tkinter as tk

@@ -41,9 +41,10 @@ class LinkedChartGroup:
                 canvas.sync_with(*peers)
 
     def reset_all(self) -> None:
-        """Ripristina la vista fit-to-canvas su tutti i canvas del gruppo."""
+        """Ripristina la vista home su tutti i canvas del gruppo."""
         for canvas in self._canvases:
-            canvas._reset_fit()
+            if canvas._home_xlim and canvas._home_ylim:
+                canvas._set_lims(canvas._home_xlim, canvas._home_ylim)
 
 
 # ---------------------------------------------------------------------------
