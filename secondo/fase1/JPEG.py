@@ -1,19 +1,3 @@
-"""
-JPEG.py
--------
-Compressione JPEG-like tramite DCT2 con visualizzazione Tkinter.
-
-La UI riusa i widget condivisi (ZoomableImageCanvas con zoom/pan sincronizzato)
-della fase2, eliminando la dipendenza da PyQt6 e dal vecchio helper/.
-
-Utilizzo
---------
-    python fase1/run.py
-    python fase1/JPEG.py     ← funziona anche direttamente
-
-La funzione JPEG() può essere importata e richiamata programmaticamente;
-il parametro `grafico=True` (default) apre la finestra Tkinter.
-"""
 
 import math
 import os
@@ -238,5 +222,5 @@ def JPEG(img, N, M, grafico=True, triangolare=False):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    img = apri_immagine("bridge.bmp")
+    img = apri_immagine("tonypitony.bmp")
     JPEG(img, 5, 5, True, False)

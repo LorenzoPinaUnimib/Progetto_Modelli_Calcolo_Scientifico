@@ -51,6 +51,7 @@ ax1.plot(Ns, o_n3, linestyle='--', label='O(N³)', linewidth=2)
 ax1.set_xlabel('N')
 ax1.set_ylabel('Tempo in secondi')
 ax1.set_title('Tempi di esecuzione')
+ax1.set_yscale('log')
 ax1.grid(True)
 ax1.legend()
 

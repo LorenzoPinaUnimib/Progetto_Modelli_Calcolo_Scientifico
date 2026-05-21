@@ -7,7 +7,7 @@ Funzionalità:
   - zoom centrato sul puntatore con la rotella del mouse
   - pan trascinando con il tasto sinistro
   - doppio clic per tornare alla vista fit-to-canvas
-  - sincronizzazione bidirezionale con un canvas gemello (metodo sync_with)
+  - sincronizzazione N-vie tramite sync_with(*others) — identica a ZoomableChartCanvas
   - supporto cross-platform: Windows (MouseWheel delta), macOS (MouseWheel
     units), Linux (Button-4 / Button-5)
 
@@ -51,7 +51,7 @@ class ZoomableImageCanvas(tk.Canvas):
         self._drag_start_y: int = 0
 
         self._tk_image: ImageTk.PhotoImage | None = None
-        self._synced_canvas: "ZoomableImageCanvas | None" = None
+        self._synced_canvases: "list[ZoomableImageCanvas]" = []
         self._syncing: bool = False
 
         self._resize_after_id: str | None = None
@@ -85,10 +85,13 @@ class ZoomableImageCanvas(tk.Canvas):
         self._tk_image  = None
         self.delete("all")
 
-    def sync_with(self, other: "ZoomableImageCanvas") -> None:
-        """Collega questo canvas con un altro per sincronizzare zoom e pan."""
-        self._synced_canvas  = other
-        other._synced_canvas = self
+    def sync_with(self, *others: "ZoomableImageCanvas") -> None:
+        """Collega questo canvas con altri per sincronizzare zoom e pan (N-vie)."""
+        for other in others:
+            if other not in self._synced_canvases:
+                self._synced_canvases.append(other)
+            if self not in other._synced_canvases:
+                other._synced_canvases.append(self)
 
     def reset_fit(self) -> None:
         """Adatta l'immagine alla dimensione del canvas mantenendo le proporzioni."""
@@ -201,13 +204,13 @@ class ZoomableImageCanvas(tk.Canvas):
             self._syncing = False
 
     def _propagate_view(self, anchor_cx: float, anchor_cy: float) -> None:
-        if self._synced_canvas is None or self._synced_canvas._syncing:
-            return
-        if self._pil_image is None:
+        if not self._synced_canvases or self._pil_image is None:
             return
         img_px, img_py = self._image_point_from_canvas(anchor_cx, anchor_cy)
-        self._synced_canvas._apply_sync(self._zoom_level, img_px, img_py,
-                                        anchor_cx, anchor_cy)
+        for other in self._synced_canvases:
+            if not other._syncing:
+                other._apply_sync(self._zoom_level, img_px, img_py,
+                                  anchor_cx, anchor_cy)
 
     # ------------------------------------------------------------------
     # Handler eventi
@@ -255,10 +258,21 @@ class ZoomableImageCanvas(tk.Canvas):
         return "break"
 
     def _on_reset_view(self, _event: tk.Event) -> None:
+        """Doppio clic: reimposta la vista su tutti i canvas sincronizzati."""
+        # Reset su se stesso
+        self._do_reset_fit_and_propagate()
+        # Reset anche su tutti i canvas collegati
+        for other in self._synced_canvases:
+            if not other._syncing:
+                other._syncing = True
+                try:
+                    other.reset_fit()
+                finally:
+                    other._syncing = False
+
+    def _do_reset_fit_and_propagate(self) -> None:
+        """Esegue reset_fit locale e poi propaga ai peer."""
         self.reset_fit()
-        cw = self.winfo_width()  or 400
-        ch = self.winfo_height() or 400
-        self._propagate_view(cw / 2.0, ch / 2.0)
 
     def _on_resize(self, _event: tk.Event) -> None:
         if self._resize_after_id is not None:

@@ -173,19 +173,19 @@ class DctCompressionApp:
     def _build_image_preview_area(self) -> None:
         """Crea i due canvas affiancati per le anteprime originale / compressa."""
         preview_frame = ttk.Frame(self._inner_frame)
-        preview_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        preview_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         original_panel = ttk.LabelFrame(preview_frame, text=LABEL_ORIGINAL, padding=5)
         original_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
         self._original_canvas = ZoomableImageCanvas(
-            original_panel, background="#2b2b2b", cursor="fleur", width=400, height=300,
+            original_panel, background="#2b2b2b", cursor="fleur", width=400, height=400,
         )
         self._original_canvas.pack(fill=tk.BOTH, expand=True)
 
         compressed_panel = ttk.LabelFrame(preview_frame, text=LABEL_COMPRESSED, padding=5)
         compressed_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
         self._compressed_canvas = ZoomableImageCanvas(
-            compressed_panel, background="#2b2b2b", cursor="fleur", width=400, height=300,
+            compressed_panel, background="#2b2b2b", cursor="fleur", width=400, height=400,
         )
         self._compressed_canvas.pack(fill=tk.BOTH, expand=True)
 
@@ -409,10 +409,9 @@ class DctCompressionApp:
             LinkedChartGroup([collected_canvases[2], collected_canvases[3]]),
         ]
 
-        # ---- Aggiorna scroll e salta ai grafici -------------------------
+        # ---- Aggiorna la scrollregion senza spostare la vista -------------------------
         self._inner_frame.update_idletasks()
         self._main_canvas.configure(scrollregion=self._main_canvas.bbox("all"))
-        self._main_canvas.yview_moveto(1.0)
 
     # ------------------------------------------------------------------
     # Gestori degli eventi utente
