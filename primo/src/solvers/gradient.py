@@ -2,7 +2,7 @@ import numpy as np
 import time
 import scipy.sparse.linalg as spla
 
-def solve(A, b, tol, nmax=20000):
+def solve(A, b, tol, nmax=50000):
     """
     Metodo del gradiente
     INPUT  : A=matrice del sistema, b=termine noto, 
@@ -66,8 +66,11 @@ def solve(A, b, tol, nmax=20000):
         err = np.linalg.norm(A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
 
         nit += 1
-        
+
+    if nit >= nmax:
+        print("Metodo del Gradiente ha raggiunto il numero massimo di iterazioni e non ha terminato l'esecuzione, saranno mostrati risultati parziali")
+
     # Calcolo tempo trascorso
     elapsed_time = time.perf_counter() - start_time
-    
+
     return x, nit, elapsed_time

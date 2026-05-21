@@ -3,7 +3,7 @@ import scipy.sparse as sp
 from scipy.sparse.linalg import spsolve_triangular
 import time
 
-def solve(A, b, tol, nmax=20000):
+def solve(A, b, tol, nmax=50000):
     """
     Metodo di Gauß-Seidel
     INPUT  : A=matrice del sistema, b=termine noto,
@@ -59,6 +59,9 @@ def solve(A, b, tol, nmax=20000):
         
         nit += 1
         
+    if nit >= nmax:
+        print("Metodo di Gauß-Seidel ha raggiunto il numero massimo di iterazioni e non ha terminato l'esecuzione, saranno mostrati risultati parziali")
+
     # Calcolo tempo trascorso
     elapsed_time = time.perf_counter() - start_time
     

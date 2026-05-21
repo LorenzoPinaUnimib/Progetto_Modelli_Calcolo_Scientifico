@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 import time
 
-def solve(A, b, tol, nmax=20000):
+def solve(A, b, tol, nmax=50000):
     """
     Metodo di Jacobi
     INPUT  : A=matrice del sistema, b=termine noto, 
@@ -54,7 +54,11 @@ def solve(A, b, tol, nmax=20000):
 
         nit += 1
         
+    if nit >= nmax:
+        print("Metodo di Jacobi ha raggiunto il numero massimo di iterazioni e non ha terminato l'esecuzione, saranno mostrati risultati parziali")
+
     # Calcolo tempo trascorso
     elapsed_time = time.perf_counter() - start_time
-    
+
+
     return x, nit, elapsed_time

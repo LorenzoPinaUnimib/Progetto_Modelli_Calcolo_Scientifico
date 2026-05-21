@@ -69,11 +69,12 @@ class SolverThread(threading.Thread):
                 # Calcolo errori
                 err = _compute_relative_error(x_true, x_sol)
                 results[name] = {
+                    "x_sol":        x_sol,
                     "err":          err,
                     "iters":        iters,
                     "time":         elapsed,
                     "peak_mem_mb":  peak_mem / 1e6,
-                    "failed":       x_sol is None,
+                    "failed":       x_sol is None or iters >= 50000,
                 }
 
             self.on_done(results)
