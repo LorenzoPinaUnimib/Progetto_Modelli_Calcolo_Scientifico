@@ -1,8 +1,8 @@
 # Compressione di Immagini Digitali Tramite Trasformata Discreta del Coseno Bidimensionale (DCT-II)
 
 **Corso:** Modelli di Calcolo Scientifico  
-**Progetto:** Secondo — Fase 2  
-**Anno Accademico:** 2024–2025  
+**Progetto:** Secondo  
+**Anno Accademico:** 2025–2026  
 
 ---
 
