@@ -170,32 +170,63 @@ class DctCompressionApp:
             foreground="gray",
         ).pack(anchor=tk.W, pady=(4, 0))
 
+    # Dimensione massima (in pixel) del lato più lungo del canvas di preview
+    _PREVIEW_MAX_PX: int = 520
+    # Dimensione di default quando non è ancora caricata alcuna immagine
+    _PREVIEW_DEFAULT_PX: int = 400
+
     def _build_image_preview_area(self) -> None:
         """Crea i due canvas affiancati per le anteprime originale / compressa."""
-        preview_frame = ttk.Frame(self._inner_frame)
-        preview_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=20, pady=20)
+        self._preview_frame = ttk.Frame(self._inner_frame)
+        self._preview_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        original_panel = ttk.LabelFrame(preview_frame, text=LABEL_ORIGINAL, padding=5)
-        original_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        self._original_panel = ttk.LabelFrame(self._preview_frame, text=LABEL_ORIGINAL, padding=5)
+        self._original_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
         self._original_canvas = ZoomableImageCanvas(
-            original_panel, background="#2b2b2b", cursor="fleur", width=400, height=400,
+            self._original_panel, background="#2b2b2b", cursor="fleur",
+            width=self._PREVIEW_DEFAULT_PX, height=self._PREVIEW_DEFAULT_PX,
         )
         self._original_canvas.pack(fill=tk.BOTH, expand=True)
 
-        compressed_panel = ttk.LabelFrame(preview_frame, text=LABEL_COMPRESSED, padding=5)
-        compressed_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
+        self._compressed_panel = ttk.LabelFrame(self._preview_frame, text=LABEL_COMPRESSED, padding=5)
+        self._compressed_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
         self._compressed_canvas = ZoomableImageCanvas(
-            compressed_panel, background="#2b2b2b", cursor="fleur", width=400, height=400,
+            self._compressed_panel, background="#2b2b2b", cursor="fleur",
+            width=self._PREVIEW_DEFAULT_PX, height=self._PREVIEW_DEFAULT_PX,
         )
         self._compressed_canvas.pack(fill=tk.BOTH, expand=True)
 
         self._original_canvas.sync_with(self._compressed_canvas)
 
         # Propaga lo scroll al canvas principale anche quando il mouse è sui canvas immagine
-        for canvas in (self._original_canvas, self._compressed_canvas):
+        for canvas in (self._original_canvas, self._compressed_canvas):  # type: ignore[assignment]
             canvas.bind("<MouseWheel>", self._on_child_scroll_mousewheel, add=True)
             canvas.bind("<Button-4>",   self._on_main_scroll_up_linux,    add=True)
             canvas.bind("<Button-5>",   self._on_main_scroll_down_linux,  add=True)
+
+    # ------------------------------------------------------------------
+    # Ridimensionamento canvas di preview in base all'aspect ratio dell'immagine
+    # ------------------------------------------------------------------
+
+    def _resize_preview_canvases(self, img_w: int, img_h: int) -> None:
+        """
+        Ridimensiona i due canvas di preview in modo che rispettino
+        l'aspect ratio dell'immagine, limitando il lato più lungo a
+        _PREVIEW_MAX_PX pixel.
+        """
+        max_px = self._PREVIEW_MAX_PX
+        ratio  = img_w / img_h if img_h > 0 else 1.0
+        if ratio >= 1.0:
+            # Immagine più larga che alta (o quadrata)
+            canvas_w = max_px
+            canvas_h = max(1, int(round(max_px / ratio)))
+        else:
+            # Immagine più alta che larga
+            canvas_h = max_px
+            canvas_w = max(1, int(round(max_px * ratio)))
+
+        for canvas in (self._original_canvas, self._compressed_canvas):
+            canvas.config(width=canvas_w, height=canvas_h)
 
     # ------------------------------------------------------------------
     # Scroll propagation da widget figli al canvas principale
@@ -434,6 +465,9 @@ class DctCompressionApp:
         self._file_path_label.config(text=file_path, foreground="black")
 
         pil_img = numpy_array_to_pil_image(self._original_grayscale_array)
+        # Ridimensiona i canvas in base all'aspect ratio dell'immagine caricata
+        img_h, img_w = self._original_grayscale_array.shape
+        self._resize_preview_canvases(img_w, img_h)
         self._original_canvas.set_image(pil_img)
         self._compressed_canvas.clear()
         self._original_canvas._reset_fit()
