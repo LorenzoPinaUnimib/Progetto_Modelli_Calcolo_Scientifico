@@ -6,18 +6,10 @@
 
 ---
 
-## Abstract
+## 1. Introduzione
 
 Il presente elaborato descrive la progettazione e lo sviluppo di una libreria per l'esecuzione di metodi di risoluzione di sistemi lineari di equazioni tramite risolutori iterativi. I metodi in questione sono il **metodo di Jacobi, di Gauß-Seidel, del gradiente e del gradiente coniugato**. Questa viene applicata limitatamente a matrici simmetriche e definite positive.
 L'applicazione risultante dal lavoro di sviluppo eseguito è dotata di un interfaccia grafica sviluppata con Tkinter, la quale provvede la possibilità di caricare una matrice in formato .mtx e scegliere una tolleranza, anche in notazione scentifica. Una volta forniti gli input desiderati ed eseguito il programma, verranno forniti dei grafici che descrivono n° di iterazioni, errore, tempo e memoria utilizzati per ognuno dei quattro metodi sopra elencati.
-
----
-
-## 1. Introduzione
-
-La risoluzione di sistemi lineari della forma $Ax = b$ rappresenta uno dei problemi fondamentali del calcolo scientifico. Quando la matrice $A$ è di grandi dimensioni ma strutturalmente sparsa — ovvero quando la maggior parte degli elementi è nulla — i metodi diretti come la fattorizzazione LU diventano proibitivi sia in termini di memoria sia di tempo computazionale. I metodi iterativi, al contrario, sfruttano direttamente la struttura sparsa della matrice, costruendo una successione di approssimazioni $\{x^{(k)}\}$ che converge alla soluzione esatta sotto opportune condizioni.
-
-Il presente elaborato documenta la progettazione, l'implementazione e la valutazione comparativa di quattro metodi iterativi classici: **Jacobi**, **Gauss-Seidel**, **Gradiente** e **Gradiente Coniugato**. Il progetto include un'applicazione desktop con interfaccia grafica che consente di caricare matrici in formato Matrix Market (`.mtx`), eseguire i quattro solutori in parallelo e confrontarne i risultati tramite visualizzazioni interattive.
 
 ---
 
@@ -61,7 +53,7 @@ Tutti i metodi implementati adottano un criterio di arresto basato sul residuo r
 
 $$\frac{\|Ax^{(k)} - b\|_\infty}{\|b\|_\infty} < \text{tol}$$
 
-Il numero massimo di iterazioni è fissato a $n_{\max} = 20000$ per ciascun metodo.
+Il numero massimo di iterazioni è fissato a $n_{\max} = 50000$ per ciascun metodo.
 
 ---
 
@@ -70,7 +62,7 @@ Il numero massimo di iterazioni è fissato a $n_{\max} = 20000$ per ciascun meto
 Il progetto è strutturato secondo una separazione netta tra logica di calcolo, gestione dell'input/output e presentazione visiva. La directory principale si articola come segue:
 
 ```
-project/
+src/
 ├── gui.py                  # Entry point dell'applicazione
 ├── utils/
 │   ├── app.py              # Finestra principale (tk.Tk)
@@ -79,10 +71,10 @@ project/
 │   ├── metrics.py          # Calcolo errore relativo
 │   └── styles.py           # Palette cromatica e costanti tipografiche
 └── solvers/
-    ├── jacobi.py
-    ├── gauss_seidel.py
-    ├── gradient.py
-    └── cg.py
+    ├── jacobi.py           # Solutore per Jacobi
+    ├── gauss_seidel.py     # Solutore per Gauß-Seidel
+    ├── gradient.py         # Solutore per il metodo del Gradiente
+    └── cg.py               # Solutore per il metodo del Gradiente Coniugato
 ```
 
 Il modulo `gui.py` funge da entry point e istanzia la classe `App`. Quest'ultima, definita in `utils/app.py`, eredita da `tk.Tk` e si occupa sia della costruzione dell'interfaccia sia della gestione degli eventi utente. La comunicazione tra la GUI e i solutori avviene attraverso la classe `SolverThread` (in `utils/solvers.py`), che esegue il calcolo in un thread demone separato per non bloccare il ciclo degli eventi di Tkinter. Al completamento, i risultati sono passati alla GUI tramite callback invocate con `self.after(0, ...)`, garantendo così la thread-safety nell'aggiornamento dei widget.
@@ -90,10 +82,12 @@ Il modulo `gui.py` funge da entry point e istanzia la classe `App`. Quest'ultima
 Ogni solutore espone un'interfaccia uniforme:
 
 ```python
-def solve(A, b, tol, nmax=20000) -> (x, iters, elapsed_time)
+def solve(A, b, tol, nmax=50000) -> (x, iters, elapsed_time)
 ```
 
 Questa uniformità permette a `SolverThread` di iterare dinamicamente sul dizionario dei metodi disponibili senza accoppiamento specifico con nessuno di essi.
+
+[espandere con descrizione dei singoli file]
 
 ---
 
@@ -101,15 +95,16 @@ Questa uniformità permette a `SolverThread` di iterare dinamicamente sul dizion
 
 Il progetto è implementato interamente in Python e fa uso delle seguenti librerie:
 
-**NumPy** (`numpy`) costituisce il substrato computazionale per tutte le operazioni vettoriali (norme, prodotti scalari, inizializzazione dei vettori). **SciPy** (`scipy`) è impiegata per la lettura delle matrici nel formato Matrix Market (`scipy.io.mmread`), la conversione in formato CSR (`scipy.sparse.csr_matrix`), la risoluzione di sistemi triangolari (`scipy.sparse.linalg.spsolve_triangular`), la verifica della definita positività tramite calcolo del minimo autovalore (`scipy.sparse.linalg.eigsh` con opzione `which='SM'`), e la rappresentazione efficiente delle matrici sparse.
-
-**Matplotlib** (`matplotlib`) con backend `TkAgg` gestisce la visualizzazione dei grafici comparativi direttamente all'interno della finestra Tkinter. **Tkinter** (`tkinter`), incluso nella libreria standard di Python, fornisce l'infrastruttura per l'interfaccia grafica. Il modulo `tracemalloc`, anch'esso parte della libreria standard, è utilizzato per la profilazione della memoria di picco durante l'esecuzione di ciascun solutore.
+- **NumPy** (`numpy`) costituisce il substrato computazionale per tutte le operazioni vettoriali (norme, prodotti scalari, inizializzazione dei vettori). 
+- **SciPy** (`scipy`) è impiegata per la lettura delle matrici nel formato Matrix Market (`scipy.io.mmread`), la conversione in formato CSR (`scipy.sparse.csr_matrix`), la risoluzione di sistemi triangolari (`scipy.sparse.linalg.spsolve_triangular`), la verifica della definita positività tramite calcolo del minimo autovalore (`scipy.sparse.linalg.eigsh` con opzione `which='SM'`), e la rappresentazione efficiente delle matrici sparse.
+- **Matplotlib** (`matplotlib`) con backend `TkAgg` gestisce la visualizzazione dei grafici comparativi direttamente all'interno della finestra Tkinter. 
+- **Tkinter** (`tkinter`), incluso nella libreria standard di Python, fornisce l'infrastruttura per l'interfaccia grafica. Il modulo `tracemalloc`, anch'esso parte della libreria standard, è utilizzato per la profilazione della memoria di picco durante l'esecuzione di ciascun solutore.
 
 ---
 
 ## 5. Interfaccia Grafica
 
-L'interfaccia è composta da due colonne principali. Il pannello sinistro, di larghezza fissa pari a 260 pixel, raccoglie i controlli operativi: una drop-zone cliccabile per la selezione del file `.mtx`, un campo di testo per l'impostazione della tolleranza (valore predefinito `1e-4`), un pulsante di avvio, una barra di progresso indeterminata e un'area di stato testuale. Il pannello destro, espandibile, ospita un `ttk.Notebook` con tre schede:
+L'interfaccia è composta da due colonne principali. Il pannello sinistro, di larghezza fissa pari a 260 pixel, raccoglie i controlli operativi: una drop-zone cliccabile per la selezione del file `.mtx`, un campo di testo per l'impostazione della tolleranza (valore predefinito `10e-4`), un pulsante di avvio, una barra di progresso indeterminata e un'area di stato testuale. Il pannello destro, espandibile, ospita un `ttk.Notebook` con tre schede:
 
 La scheda **Dashboard** mostra quattro grafici a barre prodotti con Matplotlib su una griglia 2×2: tempo di esecuzione in secondi, numero di iterazioni, errore relativo in scala logaritmica e memoria di picco in megabyte. Ogni metodo è associato a un colore fisso definito nel dizionario `METHOD_COLORS` di `styles.py`, garantendo coerenza visiva tra grafico e tabella.
 
@@ -123,56 +118,50 @@ Il tema grafico adotta una palette scura con sfondo `#0f1117`, pannelli `#181c27
 
 ## 6. Validazione Numerica
 
-La correttezza delle implementazioni è verificata costruendo sistemi lineali con soluzione nota. Per ogni matrice $A$ caricata, il vettore termine noto $b$ è calcolato come $b = A \cdot \mathbf{1}$, dove $\mathbf{1}$ è il vettore di tutti uno. La soluzione esatta è quindi $x^* = \mathbf{1}$. L'errore relativo è calcolato dalla funzione `_compute_relative_error` in `metrics.py` come:
+La correttezza delle implementazioni è verificata costruendo sistemi lineali con soluzione nota. 
+Per ogni matrice $A$ caricata, il vettore termine noto $b$ è calcolato come $b = A \cdot \mathbf{1}$, dove $\mathbf{1}$ è il vettore di tutti uno. 
+La soluzione esatta è quindi $x^* = \mathbf{1}$. L'errore relativo è calcolato dalla funzione `_compute_relative_error` in `metrics.py` come:
 
 $$\epsilon_{\text{rel}} = \frac{\|x^* - x^{(k)}\|_2}{\|x^*\|_2}$$
 
-I metodi del gradiente e del gradiente coniugato eseguono verifiche preliminari sulla matrice prima di avviare l'iterazione. In particolare, verificano che $A$ sia quadrata, simmetrica (controllando che `(A - A.T).nnz == 0`) e definita positiva tramite il calcolo del minimo autovalore con ARPACK. Qualora uno di questi controlli fallisca, il solutore restituisce `None` con zero iterazioni e il risultato viene marcato come fallito nella GUI.
+I metodi del gradiente e del gradiente coniugato eseguono verifiche preliminari sulla matrice prima di avviare l'iterazione. In particolare, verificano che $A$ sia quadrata, simmetrica (controllando che `(A - A.T).nnz == 0`) e definita positiva tramite il calcolo del minimo autovalore con ARPACK, che risulta sufficientemente rapido per grandi matrici sparse. Qualora uno di questi controlli fallisca, il solutore restituisce `None` con zero iterazioni e il risultato viene marcato come fallito nella GUI.
 
-Il metodo di Jacobi e Gauss-Seidel verificano invece la presenza di elementi nulli sulla diagonale principale, condizione che renderebbe la divisione per gli elementi diagonali non definita.
+Il metodo di Jacobi e Gauss-Seidel verificano invece la presenza di elementi nulli sulla diagonale principale, condizione che renderebbe la divisione per gli elementi diagonali non definita, e interrompono prematuramente l'esecuzione in maniera analoga ai metodi del gradiente se questo è il caso.
 
 ---
 
 ## 7. Esperimenti e Risultati
 
-I solutori sono stati progettati per essere valutati su matrici sparse SPD di varie dimensioni, tipicamente provenienti dalla raccolta SuiteSparse Matrix Collection o generate da discretizzazioni di equazioni differenziali alle derivate parziali. Di seguito si riporta uno schema rappresentativo del comportamento atteso, basato sulle proprietà teoriche dei metodi e sulla struttura del codice.
+[inserire risultati]
 
-Per una matrice SPD ben condizionata di dimensione moderata (es. $n \approx 1000$, densità < 1%), con tolleranza `1e-4`:
+    I solutori sono stati progettati per essere valutati su matrici sparse SPD di varie dimensioni, tipicamente provenienti dalla raccolta SuiteSparse Matrix Collection o generate da discretizzazioni di equazioni differenziali alle derivate parziali. Di seguito si riporta uno schema rappresentativo del comportamento atteso, basato sulle proprietà teoriche dei metodi e sulla struttura del codice.
 
-| Metodo | Convergenza | Iterazioni attese | Note |
-|---|---|---|---|
-| Jacobi | Dipende da $\rho(B_J)$ | Alta (migliaia) | Lento ma robusto |
-| Gauss-Seidel | Garantita (SPD) | Moderata | ~2× più veloce di Jacobi |
-| Gradiente | Garantita (SPD) | Moderata–alta | Dipende da $\kappa(A)$ |
-| Gradiente Coniugato | Garantita (SPD) | Bassa | Metodo ottimale per SPD |
+    Per una matrice SPD ben condizionata di dimensione moderata (es. $n \approx 1000$, densità < 1%), con tolleranza `1e-4`:
 
-Per matrici mal condizionate o non SPD, i metodi del gradiente e del gradiente coniugato vengono correttamente esclusi dalla computazione tramite il controllo sull'autovalore minimo.
+    | Metodo | Convergenza | Iterazioni attese | Note |
+    |---|---|---|---|
+    | Jacobi | Dipende da $\rho(B_J)$ | Alta (migliaia) | Lento ma robusto |
+    | Gauss-Seidel | Garantita (SPD) | Moderata | ~2× più veloce di Jacobi |
+    | Gradiente | Garantita (SPD) | Moderata–alta | Dipende da $\kappa(A)$ |
+    | Gradiente Coniugato | Garantita (SPD) | Bassa | Metodo ottimale per SPD |
 
-La profilazione della memoria di picco tramite `tracemalloc` permette di quantificare l'overhead introdotto da ciascun metodo rispetto alla sola memorizzazione della matrice sparsa. In generale, il gradiente coniugato richiede la memorizzazione di due vettori aggiuntivi (residuo e direzione di ricerca), contro il singolo vettore residuo dei metodi stazionari.
+    Per matrici mal condizionate o non SPD, i metodi del gradiente e del gradiente coniugato vengono correttamente esclusi dalla computazione tramite il controllo sull'autovalore minimo.
 
----
-
-## 8. Discussione
-
-Il confronto tra i quattro metodi evidenzia un chiaro trade-off tra generalità e efficienza. Jacobi e Gauss-Seidel sono applicabili a una classe più ampia di matrici (non richiedono simmetria o definita positività, a differenza degli altri), ma mostrano tipicamente tassi di convergenza inferiori al gradiente coniugato. Quest'ultimo, quando applicabile, rappresenta lo stato dell'arte tra i metodi iterativi non precondizionati per sistemi SPD.
-
-Un aspetto critico dell'implementazione del gradiente coniugato è la scelta della direzione di aggiornamento. La formula per $\beta_k$ adottata nel codice, $\beta_k = (d^{(k)T} A r^{(k+1)}) / (d^{(k)T} A d^{(k)})$, è equivalente alla formulazione di Fletcher-Reeves in aritmetica esatta, ma può accumulare errori numerici su matrici mal condizionate. In tali contesti, un riavvio periodico del metodo (resettando la direzione di ricerca al residuo) rappresenta una pratica comune per stabilizzare la convergenza.
-
-Il controllo della definita positività tramite ARPACK introduce un costo computazionale non trascurabile (calcolo dell'autovalore minimo tramite metodo delle potenze inverse), giustificato tuttavia dalla necessità di evitare applicazioni non corrette del metodo. Su matrici di grandi dimensioni questo controllo potrebbe essere sostituito da euristiche meno costose (ad esempio, verifica della dominanza diagonale).
-
-L'esecuzione in un thread demone separato garantisce la reattività dell'interfaccia durante il calcolo, ma richiede attenzione alla sincronizzazione: tutti gli aggiornamenti UI sono delegati al thread principale attraverso il meccanismo `after(0, ...)` di Tkinter, evitando così race conditions sui widget grafici.
+    La profilazione della memoria di picco tramite `tracemalloc` permette di quantificare l'overhead introdotto da ciascun metodo rispetto alla sola memorizzazione della matrice sparsa. In generale, il gradiente coniugato richiede la memorizzazione di due vettori aggiuntivi (residuo e direzione di ricerca), contro il singolo vettore residuo dei metodi stazionari.
 
 ---
 
-## 9. Conclusioni
+## 8. Conclusioni
 
-Il progetto realizza un ambiente integrato per la valutazione comparativa di metodi iterativi su sistemi lineari sparsi, combinando implementazioni numericamente corrette con una GUI professionale e misurazioni quantitative di tempo, iterazioni e memoria. L'architettura modulare, con interfacce uniformi tra i solutori e disaccoppiamento netto tra logica e presentazione, facilita l'aggiunta di nuovi metodi o metriche senza modificare il codice esistente.
+[inserire risultati]
 
-Dall'analisi emerge che il Gradiente Coniugato è il metodo preferibile per sistemi SPD grazie al suo tasso di convergenza superlineare e al ridotto numero di iterazioni. Per sistemi non simmetrici o indefiniti, Gauss-Seidel rappresenta una scelta pragmatica, con una convergenza mediamente più rapida rispetto a Jacobi a parità di requisiti. In prospettiva futura, l'introduzione di precondizionatori (ILU, Jacobi a blocchi, AMG) potrebbe ridurre sensibilmente il numero di iterazioni per matrici mal condizionate, estendendo la praticabilità dei metodi di gradiente a problemi di scala industriale.
+    Il progetto realizza un ambiente integrato per la valutazione comparativa di metodi iterativi su sistemi lineari sparsi, combinando implementazioni numericamente corrette con una GUI professionale e misurazioni quantitative di tempo, iterazioni e memoria. L'architettura modulare, con interfacce uniformi tra i solutori e disaccoppiamento netto tra logica e presentazione, facilita l'aggiunta di nuovi metodi o metriche senza modificare il codice esistente.
+
+    Dall'analisi emerge che il Gradiente Coniugato è il metodo preferibile per sistemi SPD grazie al suo tasso di convergenza superlineare e al ridotto numero di iterazioni. Per sistemi non simmetrici o indefiniti, Gauss-Seidel rappresenta una scelta pragmatica, con una convergenza mediamente più rapida rispetto a Jacobi a parità di requisiti. In prospettiva futura, l'introduzione di precondizionatori (ILU, Jacobi a blocchi, AMG) potrebbe ridurre sensibilmente il numero di iterazioni per matrici mal condizionate, estendendo la praticabilità dei metodi di gradiente a problemi di scala industriale.
 
 ---
 
-## 10. Riferimenti
+## 9. Riferimenti
 
 1. Saad, Y. (2003). *Iterative Methods for Sparse Linear Systems* (2nd ed.). SIAM.
 2. Golub, G. H., & Van Loan, C. F. (2013). *Matrix Computations* (4th ed.). Johns Hopkins University Press.

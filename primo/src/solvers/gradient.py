@@ -47,13 +47,13 @@ def solve(A, b, tol, nmax=50000):
     # Salvataggio tempo di inizio
     start_time = time.perf_counter()
     
+    # Calcolo residuo iniziale
+    rhs = b - A @ x
+
     # Iterazione del metodo
     while nit < nmax and err >= tol:
         if nit % 1000 == 0:
             print("Gradiente: iterazione", nit)
-
-        # Calcolo residuo
-        rhs = b - A @ x
         
         # Calcolo della dimensione del passo
         A_res = A @ rhs
@@ -62,6 +62,9 @@ def solve(A, b, tol, nmax=50000):
         # Aggiornamento della soluzione
         x = x + step * rhs
         
+        # Aggiornamento del residuo
+        rhs  = rhs - step * A_res
+
         # Calcolo errore
         err = np.linalg.norm(A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
 
