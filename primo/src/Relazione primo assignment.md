@@ -239,9 +239,9 @@ Come menzionato prima, è stato eseguito un giro di test con tolleranza di $10^{
 
 Si può notare che con questa tolleranza, tutti i metodi arrivano al numero massimo di iterazioni senza convergere, il che permette di avere una stima più precisa della velocità di convergenza dei vari metodi.
 
-Inoltre, come precedentemente notato, `spa1.mtx` e `spa2.mtx` hanno difficoltà nel fare convergere il metodo del gradiente per via dell'alto numero di condizionamento.
+Inoltre, come precedentemente notato, `spa1.mtx` e `spa2.mtx` presentano difficoltà nella convergenza per il metodo del gradiente, dovuta all'alto numero di condizionamento.
 
-Si nota anche che il metodo di Gauß-Seidel è consistentemente lento a pari numero di iterazioni con gli altri tre metodi; questo è probabilmente dovuto alla presenza di `spsolve_triangular` all'interno della singola iterazione. In compenso, sembra avere in media una precisione maggiore degli altri metodi.
+Si nota anche che il metodo di Gauß-Seidel è consistentemente più lento a pari numero di iterazioni rispetto agli altri tre metodi; questo è probabilmente dovuto alla presenza di `spsolve_triangular` all'interno della singola iterazione. In compenso, sembra avere in media una precisione maggiore degli altri metodi.
 
 Contrariamente, il metodo di Gauss è consistentemente meno preciso, con la sola eccezione del metodo del gradiente che è particolarmente mal posto in `spa1.mtx` e `spa2.mtx`.
 
@@ -263,9 +263,7 @@ Risulta quindi possibile utilizzare questa libreria anche per matrici molto più
 
 I risultati sperimentali confermano in modo netto la superiorità del metodo del Gradiente Coniugato come solutore general-purpose per sistemi lineari sparsi con matrice simmetrica e definita positiva. Su tutte e quattro le matrici testate, il gradiente coniugato converge in un numero di iterazioni drasticamente inferiore rispetto agli altri metodi e raggiunge gli errori relativi più bassi, indipendentemente dalla tolleranza richiesta. Questo comportamento è coerente con la teoria: la coniugazione delle direzioni di ricerca permette al metodo di non subire il degrado da zig-zag tipico del gradiente semplice, e il tasso di convergenza governato da $\sqrt{\kappa(A)}$​ anziché da $\kappa(A)$ si traduce in un vantaggio concreto e misurabile anche per le matrici più mal condizionate del benchmark.
 
-
 Il metodo del Gradiente semplice si è rivelato il punto debole dell'insieme, in particolare su `spa1.mtx` e `spa2.mtx`, dove l'elevato numero di condizionamento ($\kappa \approx 2048$ e $\kappa \approx 1411$ rispettivamente) causa una convergenza estremamente lenta o addirittura il raggiungimento del limite massimo di iterazioni. Al contrario, su `vem1.mtx` e `vem2.mtx`, caratterizzate da $\kappa$ più contenuto, il metodo si comporta in modo più competitivo. Jacobi e Gauß-Seidel si collocano in una posizione intermedia: Jacobi eccelle per efficienza di memoria, risultando di gran lunga il metodo più parsimonioso, mentre Gauß-Seidel tende a fornire soluzioni mediamente più accurate, al costo però di un tempo per iterazione più elevato a causa dell'impiego di `spsolve_triangular`.
-
 
 Dal punto di vista implementativo, il progetto ha dimostrato come sia possibile costruire una libreria didattica funzionale e misurabile attorno a questi quattro metodi classici, integrando profilazione di memoria, criteri di arresto uniformi e un'interfaccia grafica interattiva. I limiti principali riguardano la scalabilità: l'aumento di dimensione da `spa1.mtx` a `spa2.mtx` comporta già un incremento di tempo di calcolo significativo, rendendo l'utilizzo poco pratico su matrici di grandi dimensioni senza ulteriori ottimizzazioni — ad esempio l'adozione di precondizionatori per il gradiente coniugato, o una parallelizzazione delle operazioni di prodotto matrice-vettore. Queste rappresentano naturali direzioni di sviluppo futuro per estendere le capacità della libreria a problemi di scala reale.
 
