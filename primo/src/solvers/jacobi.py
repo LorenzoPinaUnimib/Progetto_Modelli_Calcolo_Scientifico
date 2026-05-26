@@ -34,8 +34,7 @@ def solve(A, b, tol, nmax=50000):
     nit = 0
 
     # Calcolo errore
-    r = b - A @ x
-    err = np.linalg.norm(r, np.inf) / np.linalg.norm(b, np.inf)
+    err = np.linalg.norm( A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
 
     # Salvataggio tempo di inizio
     start_time = time.perf_counter()
@@ -46,11 +45,10 @@ def solve(A, b, tol, nmax=50000):
             print("Jacobi: iterazione", nit)
 
         # Aggiornamento vettore delle soluzioni
-        x = x + D_inv @ r
+        x = x + D_inv @ (b - A @ x)
 
         # Calcolo errore
-        r = b - A @ x
-        err = np.linalg.norm(r, np.inf) / np.linalg.norm(b, np.inf)
+        err = np.linalg.norm( A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
 
         nit += 1
         
