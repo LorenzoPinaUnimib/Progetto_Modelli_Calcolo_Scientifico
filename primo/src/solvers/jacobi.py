@@ -48,7 +48,7 @@ def solve(A, b, tol, nmax=50000):
         x = x + D_inv @ (b - A @ x)
 
         # Calcolo errore
-        err = np.linalg.norm( A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
+        err = np.linalg.norm(A @ x - b, np.inf) / np.linalg.norm(b, np.inf)
 
         nit += 1
         

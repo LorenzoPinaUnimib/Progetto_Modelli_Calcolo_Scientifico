@@ -393,7 +393,7 @@ class App(tk.Tk):
             tol = float(self._tol_var.get())
         except ValueError:
             messagebox.showerror("Tolleranza non valida",
-                                  "Inserisci un numero valido (es. 1e-6).")
+                                  "Inserisci un numero valido (es. 10e-6).")
             return
 
         # Blocca UI
