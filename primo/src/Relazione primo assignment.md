@@ -65,10 +65,10 @@ Il progetto è strutturato secondo una separazione netta tra logica di calcolo, 
 src/
 ├── gui.py                  # Entry point dell'applicazione
 ├── solvers/
-│   ├── jacobi.py           # Solutore per Jacobi
+│   ├── cg.py               # Solutore per il metodo del Gradiente Coniugato
 │   ├── gauss_seidel.py     # Solutore per Gauß-Seidel
 │   ├── gradient.py         # Solutore per il metodo del Gradiente
-│   └── cg.py               # Solutore per il metodo del Gradiente Coniugato
+│   └── jacobi.py           # Solutore per Jacobi
 └── utils/
     ├── app.py              # Finestra principale (tk.Tk)
     ├── matrix_io.py        # Lettura matrici .mtx
@@ -227,7 +227,8 @@ Anche se non calcolato nell'applicazione in quanto oneroso, il numero di condizi
 
 Ricordando che il numero di condizionamento $\kappa$ è dato da $\frac {\lambda_{max}}{\lambda_{min}}$, possiamo osservare che tutte le matrici sono _mal condizionate_, in quanto $\kappa>>1$.
 
-Sapendo inoltre che più alto il numero di condizionamento, più fa fatica il metodo del gradiente a convergere, risulta evidente perchè con `spa1.mtx` e `spa2.mtx` questo vada così in crisi, mentre con `vem1.mtx` e `vem2.mtx` questo sia più in linea con gli altri metodi
+Sapendo inoltre che più alto il numero di condizionamento, più fanno fatica i vari metodi a convergere.
+Inoltre, per il metodo del gradiente, sappiamo che più alto è il numero di condizionamento e più le linee di livello sono dissimili a dei cerchi; risulta quindi evidente che la convergenza proceda a zig-zag. Si nota che con `spa1.mtx` e `spa2.mtx` questo metodo vada così in crisi, mentre con `vem1.mtx` e `vem2.mtx` sia più in linea con gli altri metodi.
 
 ---
 
@@ -247,7 +248,7 @@ Contrariamente, il metodo di Gauss è consistentemente meno preciso, con la sola
 
 ---
 
-### 6.a Note aggiuntive sull'utilizzo di memoria
+### 6.7 Note aggiuntive sull'utilizzo di memoria
 
 In aggiunta alle tre metriche richieste dalla consegna, è stata aggiunta anche l'analisi sull'utilizzo della memoria, che rimane sufficientemente consistente con la dimensione delle matrici analizzate:
 
