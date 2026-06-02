@@ -1,7 +1,7 @@
 # Analisi Comparativa di Metodi Iterativi per Sistemi Lineari Sparsi
 
 **Corso:** Modelli di Calcolo Scientifico  
-**Progetto:** Primo - alternativo  
+**Progetto:** Primo Assignment - alternativo  
 **Anno Accademico:** 2025–2026
 
 ---
@@ -169,7 +169,7 @@ La scheda **Tabella risultati** presenta un `ttk.Treeview` con le colonne Metodo
 
 La scheda **Log** redirige lo `stdout` dell'applicazione verso un widget `tk.Text` in sola lettura, mostrando i messaggi di avanzamento emessi da ciascun solutore durante l'iterazione (ogni 1000 cicli) e un riepilogo tabulare al termine.
 
-![alt text](/primo/immagini/gui.png)
+![](/primo/immagini/gui.png)
 
 Il tema grafico adotta una palette scura con sfondo `#0f1117`, pannelli `#181c27` e accento principale `#4f8ef7`, definiti come costanti in `styles.py`. Lo stile è applicato globalmente tramite `ttk.Style` con tema base `"clam"`.
 
@@ -187,7 +187,7 @@ Per quello che riguarda la matrice `spa1.mtx`, di dimensioni 1000x1000 ed un tot
 
 Contrariamente, il metodo del Gradiente coniugato fornisce risultati molto più precisi sotto condizioni più impegnative; Jacobi e Gauß-Seidel non presentano qualità di spicco, eccetto che per un'alta precisione di Jacobi in condizioni rilassate.
 
-![alt text](/primo/immagini/spa1.png)
+![](/primo/immagini/spa1.png)
 
 ---
 
@@ -195,7 +195,7 @@ Contrariamente, il metodo del Gradiente coniugato fornisce risultati molto più 
 
 Per la matrice `spa2.mtx`, di dimensioni 3000x3000 ed un totale di 1633298 elementi non-zero (0.18%), si può osservare un comportamento analogo a quello di `spa1.mtx` per quello che concerne i metodi del gradiente, mentre si nota un miglioramento netto nel metodo di Gauß-Seidel rispetto alla prima.
 
-![alt text](/primo/immagini/spa2.png)
+![](/primo/immagini/spa2.png)
 
 ---
 
@@ -205,7 +205,7 @@ Per la matrice `vem1.mtx`, di dimensioni 1681x1681 ed un totale di 13385 element
 
 Inoltre, si nota che il gradiente coniugato sia il migliore di gran lunga per quello che riguarda l'errore, indipendentemente dalle condizioni di precisione richieste.
 
-![alt text](/primo/immagini/vem1.png)
+![](/primo/immagini/vem1.png)
 
 ---
 
@@ -213,7 +213,7 @@ Inoltre, si nota che il gradiente coniugato sia il migliore di gran lunga per qu
 
 Infine, per `vem2.mtx`, di dimensioni 2601x2601 ed un totale di 21225 elementi non-zero (>0.01%), possiamo notare che si ripete un comportamento analogo a `vem1.mtx`.
 
-![alt text](/primo/immagini/vem2.png)
+![](/primo/immagini/vem2.png)
 
 ---
 
@@ -236,7 +236,7 @@ Inoltre, per il metodo del gradiente, sappiamo che più alto è il numero di con
 
 Come menzionato prima, è stato eseguito un giro di test con tolleranza di $10^{-20}$, con i seguenti risultati:
 
-![alt text](/primo/immagini/lowtol.png)
+![](/primo/immagini/lowtol.png)
 
 Si può notare che con questa tolleranza, tutti i metodi arrivano al numero massimo di iterazioni senza convergere, il che permette di avere una stima più precisa della velocità di convergenza dei vari metodi.
 
@@ -252,7 +252,7 @@ Contrariamente, il metodo di Gauss è consistentemente meno preciso, con la sola
 
 In aggiunta alle tre metriche richieste dalla consegna, è stata aggiunta anche l'analisi sull'utilizzo della memoria, che rimane sufficientemente consistente con la dimensione delle matrici analizzate:
 
-![alt text](/primo/immagini/memusage.png)
+![](/primo/immagini/memusage.png)
 
 Inoltre, si può notare che Jacobi in particolare è estremamente efficiente sotto questo ambito, mentre gli altri tre metodi sono pressochè equivalenti.
 

@@ -1,4 +1,3 @@
-
 import math
 import os
 import sys
@@ -15,7 +14,7 @@ if _ROOT not in sys.path:
 
 
 # ---------------------------------------------------------------------------
-# Funzioni di elaborazione immagine (invariate dalla versione originale)
+# Funzioni di elaborazione immagine
 # ---------------------------------------------------------------------------
 
 def apri_immagine(name):
@@ -222,5 +221,5 @@ def JPEG(img, N, M, grafico=True, triangolare=False):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    img = apri_immagine("tonypitony.bmp")
-    JPEG(img, 5, 5, True, False)
+    img = apri_immagine("bridge.bmp")
+    JPEG(img, 8, 3, True, False)

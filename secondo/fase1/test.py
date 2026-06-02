@@ -5,7 +5,7 @@ import numpy as np
 from scipy.fftpack import dctn
 
 # Costruisco liste utilizzate durante l'esecuzione
-Ns = list(range(50, 301, 50))
+Ns = list(range(50, 701, 50))
 timesJPEG = []
 timesScipy = []
 errors = []

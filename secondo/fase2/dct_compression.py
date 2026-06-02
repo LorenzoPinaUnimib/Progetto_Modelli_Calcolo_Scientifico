@@ -41,7 +41,7 @@ def apply_idct2(coefficients: np.ndarray) -> np.ndarray:
 
 def build_frequency_cutoff_mask(block_size: int, threshold_d: int) -> np.ndarray:
     """
-    Costruisce una maschera booleana F×F dove True = coefficiente da mantenere.
+    Costruisce una maschera booleana FxF dove True = coefficiente da mantenere.
 
     Un coefficiente c[k, l] viene mantenuto se e solo se  k + l < d.
     Con d=0 si eliminano tutte le frequenze; con d=2F-2 si elimina solo
@@ -54,7 +54,7 @@ def build_frequency_cutoff_mask(block_size: int, threshold_d: int) -> np.ndarray
 
     Returns
     -------
-    mask : array booleano F×F  (True = mantieni, False = azzera)
+    mask : array booleano FxF  (True = mantieni, False = azzera)
     """
     row_indices, col_indices = np.indices((block_size, block_size))
     mask = (row_indices + col_indices) < threshold_d

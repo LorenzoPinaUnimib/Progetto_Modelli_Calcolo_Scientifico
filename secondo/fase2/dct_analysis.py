@@ -23,13 +23,13 @@ def build_dct_frequency_map(
 
     Parameters
     ----------
-    image       : array 2D uint8 (altezza × larghezza)
+    image       : array 2D uint8 (altezza x larghezza)
     block_size  : ampiezza F dei blocchi
     threshold_d : soglia di taglio frequenze d
 
     Returns
     -------
-    freq_full  : mappa F×F con la media dei |coefficienti DCT| su tutti i blocchi
+    freq_full  : mappa FxF con la media dei |coefficienti DCT| su tutti i blocchi
     freq_trunc : stessa mappa con i coefficienti azzerati secondo la maschera diagonale
     """
     h, w = image.shape
