@@ -463,39 +463,9 @@ Con $d = F$ (circa metà coefficienti), variando $F \in \{4, 8, 16, 32\}$:
 - Blocchi più piccoli ($F = 4$) producono artefatti fini ma numerosi.
 - $F = 8$ è il compromesso ottimale empiricamente identificato dallo standard JPEG.
 
-### 8.5 Analisi Quantitativa — MSE e PSNR
-
-$$\text{MSE} = \frac{1}{H'W'}\sum_{m,n}(I_{m,n}-\hat{I}_{m,n})^2, \qquad \text{PSNR} = 10\log_{10}\!\left(\frac{255^2}{\text{MSE}}\right) \text{ [dB]}$$
-
-PSNR $> 35$ dB indica ottima qualità percepita; PSNR $< 25$ dB degrado severo.
-
-> **[PLACEHOLDER TABELLA 2]**
-> _MSE e PSNR al variare di $d$ (con $F=8$): colonne $d$, coefficienti conservati, %, MSE, PSNR._
-
-> **[PLACEHOLDER FIGURA 12]**
-> _Curva PSNR vs $d$ per $F=8$: andamento monotono crescente e concavo._
-
 ---
 
-## 9. Discussione
-
-**Fase 1 — correttezza e costo dell'implementazione manuale.** La DCT-II implementata tramite la matrice $\mathbf{D}$ costruita esplicitamente è numericamente corretta ma ha complessità $O(N^3)$ per blocco contro $O(N^2 \log N)$ di SciPy. Per immagini reali ($N = 8$) la differenza è trascurabile; diventa significativa per blocchi grandi o per il benchmark su matrici $N \times N$ con $N$ fino a 300.
-
-**Concentrazione spettrale.** Le mappe DCT della Fase 2 confermano che per immagini naturali l'energia è quasi interamente concentrata nelle basse frequenze — fondamento fisico della compressione JPEG. Lo stesso fenomeno è osservabile indirettamente nella Fase 1: con $M/N = 20\%$ la ricostruzione del segnale 1D è già riconoscibile, indicando che le prime $M$ frequenze catturano la struttura principale del segnale.
-
-**Compromesso $d$.** La curva PSNR vs $d$ è monotona crescente e concava: il maggior guadagno si ottiene aggiungendo le prime componenti AC; le alte frequenze contribuiscono poco alla qualità percepita.
-
-**Artefatti di blocco.** Compaiono per $d$ piccoli, in entrambe le fasi. Ogni blocco è trasformato indipendentemente senza continuità con i vicini: JPEG-2000 risolve questo con la DWT (trasformata wavelet discreta).
-
-**Uniformità dell'UI.** La condivisione del package `widgets/` garantisce che la finestra di confronto della Fase 1 e quella della Fase 2 abbiano lo stesso comportamento (zoom, pan, sincronizzazione N-vie), riducendo la superficie di codice da mantenere e rendendo l'esperienza utente coerente.
-
-**Rimozione di PyQt6 e `1D_base.py` dalla Fase 1.** La sostituzione di PyQt6 + opencv-python con Tkinter + Pillow semplifica l'installazione (da 5 dipendenze a 3) e allinea le due fasi allo stesso stack tecnologico. La rimozione di `1D_base.py` consolida la Fase 1 nei soli file `JPEG.py` e `test.py`, eliminando codice non direttamente collegato all'obiettivo della compressione 2D.
-
-**Sincronizzazione N-vie per `ZoomableImageCanvas`.** Il meccanismo `sync_with` è stato allineato a quello di `ZoomableChartCanvas`: da peer-to-peer (un solo canvas gemello) a lista (`_synced_canvases`). Il doppio clic propaga il `reset_fit()` a tutti i canvas collegati, garantendo che aggiungere un terzo canvas all'insieme non richieda modifiche al codice esistente.
-
----
-
-## 10. Conclusioni
+## 9. Conclusioni
 
 Il progetto ha prodotto un sistema completo per la compressione di immagini tramite DCT-II, articolato in due fasi architetturalmente integrate:
 
@@ -504,24 +474,6 @@ Il progetto ha prodotto un sistema completo per la compressione di immagini tram
 
 Le due fasi condividono lo stesso package di widget UI (`widgets/`) e lo stesso modulo di costanti, garantendo uniformità dell'esperienza utente e riducendo la duplicazione del codice.
 
-I risultati confermano che la DCT-II è una trasformata efficace per la compressione di immagini naturali, che $d$ controlla il compromesso qualità/compressione, e che $F = 8$ è il valore ottimale per immagini fotografiche generali.
+I risultati confermano che la DCT-II è una trasformata efficace per la compressione di immagini naturali.
 
-Sviluppi futuri: supporto a immagini a colori (spazio YCbCr con subsampling crominanza); quantizzazione adattiva per frequenza; metrica SSIM; parallelizzazione dei blocchi; interfaccia parametrica per `JPEG.py` (scelta F, M e modalità di troncamento da riga di comando).
-
----
-
-## 11. Riferimenti
-
-1. Wallace, G. K. (1992). _The JPEG still picture compression standard_. IEEE Transactions on Consumer Electronics, 38(1), xviii–xxxiv.
-2. Rao, K. R., & Yip, P. (1990). _Discrete Cosine Transform: Algorithms, Advantages, Applications_. Academic Press.
-3. Ahmed, N., Natarajan, T., & Rao, K. R. (1974). _Discrete cosine transform_. IEEE Transactions on Computers, C-23(1), 90–93.
-4. Virtanen, P., et al. (2020). _SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python_. Nature Methods, 17, 261–272.
-5. Harris, C. R., et al. (2020). _Array programming with NumPy_. Nature, 585, 357–362.
-6. Hunter, J. D. (2007). _Matplotlib: A 2D Graphics Environment_. Computing in Science & Engineering, 9(3), 90–95.
-7. Gonzalez, R. C., & Woods, R. E. (2018). _Digital Image Processing_, 4th ed. Pearson Education.
-8. Strang, G. (1999). _The discrete cosine transform_. SIAM Review, 41(1), 135–147.
-9. Clark, A., et al. _Pillow (PIL Fork)_. https://pillow.readthedocs.io/
-
----
-
-_Documento in formato Markdown. Aggiungere le figure nei placeholder indicati prima della consegna finale. I valori della Tabella 2 vanno compilati eseguendo `test.py` sull'hardware di riferimento._
+Sviluppi futuri: supporto a immagini a colori, quantizzazione adattiva per frequenza, parallelizzazione dei blocchi, interfaccia parametrica per `JPEG.py` (scelta F, M e modalità di troncamento da riga di comando).
