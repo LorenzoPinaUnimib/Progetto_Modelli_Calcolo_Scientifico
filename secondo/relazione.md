@@ -38,11 +38,7 @@ Il presente lavoro descrive la progettazione e l'implementazione di un sistema s
     - 5.3 [Modulo `constants.py`](#53-modulo-constantspy)
 6. [Interfaccia Grafica](#6-interfaccia-grafica)
 7. [Tecnologie e Dipendenze](#7-tecnologie-e-dipendenze)
-8. [Esperimenti e Risultati](#8-esperimenti-e-risultati)
-    - 8.1 [Fase 1 — Prestazioni: implementazione manuale vs SciPy](#81-fase-1--prestazioni-implementazione-manuale-vs-scipy)
-    - 8.3 [Fase 2 — Impatto del parametro d (con F = 8)](#83-fase-2--impatto-del-parametro-d-con-f--8)
-    - 8.4 [Fase 2 — Impatto del parametro F](#84-fase-2--impatto-del-parametro-f)
-9. [Conclusioni](#9-conclusioni)
+8. [Conclusioni](#9-conclusioni)
 
 ---
 
@@ -403,66 +399,7 @@ Le mappe DCT mostrano la media dei $|\text{coefficienti}|$ in scala logaritmica;
 
 ---
 
-## 8. Esperimenti e Risultati
-
-### 8.1 Fase 1 — Prestazioni: implementazione manuale vs SciPy
-
-I tempi misurati su $N \in \{50, 100, 150, 200, 250, 300\}$ confermano le complessità teoriche:
-
-| $N$ | Tempo manuale (s) | Tempo SciPy (s) | Errore medio    |
-| --- | ----------------- | --------------- | --------------- |
-| 50  | _[PLACEHOLDER]_   | _[PLACEHOLDER]_ | _[PLACEHOLDER]_ |
-| 100 | _[PLACEHOLDER]_   | _[PLACEHOLDER]_ | _[PLACEHOLDER]_ |
-| 150 | _[PLACEHOLDER]_   | _[PLACEHOLDER]_ | _[PLACEHOLDER]_ |
-| 200 | _[PLACEHOLDER]_   | _[PLACEHOLDER]_ | _[PLACEHOLDER]_ |
-| 250 | _[PLACEHOLDER]_   | _[PLACEHOLDER]_ | _[PLACEHOLDER]_ |
-| 300 | _[PLACEHOLDER]_   | _[PLACEHOLDER]_ | _[PLACEHOLDER]_ |
-
-_Compilare con i valori ottenuti dall'esecuzione di `test.py`._
-
-**Osservazioni:**
-
-- L'implementazione manuale scala cubicamente ($O(N^3)$): raddoppiando $N$, il tempo aumenta di circa $8\times$.
-- SciPy scala quasi quadraticamente ($O(N^2 \log N)$), con un vantaggio crescente al crescere di $N$.
-- L'errore assoluto medio rimane nell'ordine di $10^{-13}$ – $10^{-12}$: l'implementazione manuale è numericamente corretta.
-
-### 8.3 Fase 2 — Impatto del parametro $d$ (con $F = 8$)
-
-Variando $d \in \{1, 5, 10, 14\}$ con $F = 8$ fisso:
-
-> **[PLACEHOLDER FIGURA 7]**
-> _Immagine originale in scala di grigi._
-
-> **[PLACEHOLDER FIGURA 8]**
-> _Confronto originale vs compressa per $d=1$ (sinistra) e $d=5$ (destra). Artefatti a blocchi evidenti per $d=1$._
-
-> **[PLACEHOLDER FIGURA 9]**
-> _Confronto per $d=10$ (sinistra) e $d=14$ (destra). Con $d=14$ la qualità è quasi indistinguibile dall'originale._
-
-| $d$ | Coefficienti conservati | %     | Qualità visiva                              |
-| --- | ----------------------- | ----- | ------------------------------------------- |
-| 1   | 1/64                    | 1.6%  | Solo DC — blocchi uniformemente grigi       |
-| 5   | 15/64                   | 23.4% | Riconoscibile, artefatti di blocco evidenti |
-| 10  | 55/64                   | 85.9% | Buona; artefatti solo su bordi netti        |
-| 14  | 63/64                   | 98.4% | Praticamente identica all'originale         |
-
-### 8.4 Fase 2 — Impatto del parametro $F$
-
-Con $d = F$ (circa metà coefficienti), variando $F \in \{4, 8, 16, 32\}$:
-
-> **[PLACEHOLDER FIGURA 10]**
-> _Confronto per $F=4,d=4$ (sinistra) e $F=16,d=16$ (destra)._
-
-> **[PLACEHOLDER FIGURA 11]**
-> _Confronto per $F=8,d=8$ (sinistra) e $F=32,d=32$ (destra)._
-
-- Blocchi più grandi ($F = 16, 32$) producono artefatti su scale spaziali maggiori.
-- Blocchi più piccoli ($F = 4$) producono artefatti fini ma numerosi.
-- $F = 8$ è il compromesso ottimale empiricamente identificato dallo standard JPEG.
-
----
-
-## 9. Conclusioni
+## 8. Conclusioni
 
 Il progetto ha prodotto un sistema completo per la compressione di immagini tramite DCT-II, articolato in due fasi architetturalmente integrate:
 
