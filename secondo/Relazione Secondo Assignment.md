@@ -3,6 +3,7 @@
 **Corso:** Modelli di Calcolo Scientifico  
 **Progetto:** Secondo Assignment — Fase 1 e Fase 2  
 **Anno Accademico:** 2025–2026
+**URL repo GitHub:** [Progetto_Modelli_Calcolo_Scientifico](https://github.com/LorenzoPinaUnimib/Progetto_Modelli_Calcolo_Scientifico) 
 
 ---
 
