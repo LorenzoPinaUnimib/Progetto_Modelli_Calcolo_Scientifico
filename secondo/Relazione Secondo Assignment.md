@@ -2,7 +2,7 @@
 
 **Corso:** Modelli di Calcolo Scientifico  
 **Progetto:** Secondo Assignment — Fase 1 e Fase 2  
-**Anno Accademico:** 2025–2026
+**Anno Accademico:** 2025–2026  
 **URL repo GitHub:** [Progetto_Modelli_Calcolo_Scientifico](https://github.com/LorenzoPinaUnimib/Progetto_Modelli_Calcolo_Scientifico) 
 
 ---
@@ -16,30 +16,24 @@ Il presente lavoro descrive la progettazione e l'implementazione di un sistema s
 ## Indice
 
 1. [Introduzione](#1-introduzione)
-2. [Fondamenti Teorici](#2-fondamenti-teorici)
-    - 2.1 [DCT-II Monodimensionale](#21-dct-ii-monodimensionale)
-    - 2.2 [DCT-II Bidimensionale](#22-dct-ii-bidimensionale)
-    - 2.3 [Trasformata Inversa (IDCT-II)](#23-trasformata-inversa-idct-ii)
-    - 2.4 [Algoritmo di Compressione Block-by-Block](#24-algoritmo-di-compressione-block-by-block)
-    - 2.5 [Criterio di Soglia Diagonale](#25-criterio-di-soglia-diagonale)
-3. [Fase 1 — Implementazione Manuale e Analisi delle Prestazioni](#3-fase-1--implementazione-manuale-e-analisi-delle-prestazioni)
-    - 3.1 [DCT-II 2D (JPEG-like) e visualizzazione](#31-dct-ii-2d-jpeg-like-e-visualizzazione)
-    - 3.2 [Analisi delle Prestazioni (test.py)](#32-analisi-delle-prestazioni-testpy)
-    - 3.3 [GUI Fase 1 — ZoomableImageCanvas condiviso](#33-gui-fase-1--zoomableimagecanvas-condiviso)
-4. [Fase 2 — Sistema Completo con Analisi DCT](#4-fase-2--sistema-completo-con-analisi-dct)
-    - 4.1 [Architettura del Software](#41-architettura-del-software)
-    - 4.2 [Modulo `dct_compression.py`](#42-modulo-dct_compressionpy)
-    - 4.3 [Modulo `dct_analysis.py`](#43-modulo-dct_analysispy)
-    - 4.4 [Modulo `image_utils.py`](#44-modulo-image_utilspy)
-    - 4.5 [Modulo `gui.py` e `app.py`](#45-modulo-guipy-e-apppy)
-    - 4.6 [Validazione Numerica (`tests.py`)](#46-validazione-numerica-testspy)
-5. [Architettura Condivisa](#5-architettura-condivisa)
-    - 5.1 [Struttura del Progetto](#51-struttura-del-progetto)
-    - 5.2 [Package `widgets/`](#52-package-widgets)
-    - 5.3 [Modulo `constants.py`](#53-modulo-constantspy)
-6. [Interfaccia Grafica](#6-interfaccia-grafica)
-7. [Tecnologie e Dipendenze](#7-tecnologie-e-dipendenze)
-8. [Conclusioni](#9-conclusioni)
+2. [Fase 1 — Implementazione Manuale e Analisi delle Prestazioni](#2-fase-1--implementazione-manuale-e-analisi-delle-prestazioni)
+    - 2.1 [DCT-II 2D (JPEG-like) e visualizzazione](#21-dct-ii-2d-jpeg-like-e-visualizzazione)
+    - 2.2 [Analisi delle Prestazioni (test.py)](#22-analisi-delle-prestazioni-testpy)
+    - 2.3 [GUI Fase 1 — ZoomableImageCanvas condiviso](#23-gui-fase-1--zoomableimagecanvas-condiviso)
+3. [Fase 2 — Sistema Completo con Analisi DCT](#3-fase-2--sistema-completo-con-analisi-dct)
+    - 3.1 [Architettura del Software](#31-architettura-del-software)
+    - 3.2 [Modulo `dct_compression.py`](#32-modulo-dct_compressionpy)
+    - 3.3 [Modulo `dct_analysis.py`](#33-modulo-dct_analysispy)
+    - 3.4 [Modulo `image_utils.py`](#34-modulo-image_utilspy)
+    - 3.5 [Modulo `gui.py` e `app.py`](#35-modulo-guipy-e-apppy)
+    - 3.6 [Validazione Numerica (`tests.py`)](#36-validazione-numerica-testspy)
+4. [Architettura Condivisa](#4-architettura-condivisa)
+    - 4.1 [Struttura del Progetto](#41-struttura-del-progetto)
+    - 4.2 [Package `widgets/`](#42-package-widgets)
+    - 4.3 [Modulo `constants.py`](#43-modulo-constantspy)
+5. [Interfaccia Grafica](#5-interfaccia-grafica)
+6. [Tecnologie e Dipendenze](#6-tecnologie-e-dipendenze)
+7. [Conclusioni](#7-conclusioni)
 
 ---
 
@@ -56,70 +50,9 @@ Le due fasi condividono il package di widget UI (`widgets/`) e il modulo di cost
 
 ---
 
-## 2. Fondamenti Teorici
+## 2. Fase 1 — Implementazione Manuale e Analisi delle Prestazioni
 
-### 2.1 DCT-II Monodimensionale
-
-La **Trasformata Discreta del Coseno di tipo II** (DCT-II) è una trasformata lineare, reale e ortogonale, definita su sequenze di $N$ campioni reali. Data la sequenza $\mathbf{x} = (x_0, \ldots, x_{N-1}) \in \mathbb{R}^N$, la sua DCT-II ortonormale è il vettore $\mathbf{C} \in \mathbb{R}^N$:
-
-$$
-C_k = w(k) \sum_{n=0}^{N-1} x_n \cos\!\left(\frac{\pi k (2n+1)}{2N}\right), \qquad
-w(k) = \begin{cases} 1/\sqrt{N} & k = 0 \\ \sqrt{2/N} & k \geq 1 \end{cases}
-$$
-
-Le basi $\phi_k(n) = w(k)\cos\!\bigl(\tfrac{\pi k(2n+1)}{2N}\bigr)$ formano una base ortonormale di $\mathbb{R}^N$. La matrice di trasformazione $\mathbf{D}$ è ortogonale ($\mathbf{D}^{-1} = \mathbf{D}^T$), quindi la DCT-II inversa coincide con la trasposta. La normalizzazione `norm='ortho'` in SciPy garantisce $\text{IDCT}(\text{DCT}(\mathbf{x})) = \mathbf{x}$ esattamente, senza fattori di scala residui.
-
-Il coefficiente $C_0$ è proporzionale alla media del segnale (componente DC); i coefficienti $C_k$ con $k \geq 1$ rappresentano le componenti armoniche (componenti AC) a frequenza crescente.
-
-### 2.2 DCT-II Bidimensionale
-
-La DCT-II 2D è **separabile**: applicata al blocco $\mathbf{P} \in \mathbb{R}^{F \times F}$,
-
-$$
-C_{k,l} = w(k)\,w(l) \sum_{m=0}^{F-1}\sum_{n=0}^{F-1} P_{m,n} \cos\!\left(\frac{\pi k(2m+1)}{2F}\right)\cos\!\left(\frac{\pi l(2n+1)}{2F}\right)
-$$
-
-La separabilità permette di calcolare la DCT-II 2D applicando la DCT-II 1D prima a ogni riga e poi a ogni colonna (o viceversa), riducendo la complessità da $O(F^4)$ a $O(F^3)$, e con algoritmi FFT-based a $O(F^2 \log F)$.
-
-Il coefficiente $C_{0,0}$ è la componente DC (proporzionale alla media del blocco). Per immagini naturali, l'energia è concentrata sui coefficienti a bassa frequenza (piccoli $k$, $l$): questo è il fondamento fisico della compressione DCT.
-
-### 2.3 Trasformata Inversa (IDCT-II)
-
-La ricostruzione dal dominio delle frequenze si ottiene con la IDCT-II 2D:
-
-$$
-P_{m,n} = \sum_{k=0}^{F-1}\sum_{l=0}^{F-1} C_{k,l}\,w(k)\,w(l) \cos\!\left(\frac{\pi k(2m+1)}{2F}\right)\cos\!\left(\frac{\pi l(2n+1)}{2F}\right)
-$$
-
-Il risultato della IDCT-II su coefficienti troncati è reale e non necessariamente intero. È necessario pertanto arrotondare e fare clipping: $\hat{P}_{m,n} = \text{clip}(\text{round}(\hat{P}_{m,n}), 0, 255)$.
-
-### 2.4 Algoritmo di Compressione Block-by-Block
-
-Sull'immagine $\mathbf{I} \in \{0,\ldots,255\}^{H \times W}$:
-
-1. **Partizione** in $\lfloor H/F\rfloor \times \lfloor W/F\rfloor$ blocchi $F \times F$; i pixel di bordo in eccesso vengono scartati.
-2. Per ogni blocco: **DCT-II** → **azzeramento** tramite maschera diagonale → **IDCT-II** → **round + clip**.
-3. **Assemblaggio** dell'immagine compressa $\hat{\mathbf{I}} \in \{0,\ldots,255\}^{H' \times W'}$, con $H' = F\lfloor H/F\rfloor$, $W' = F\lfloor W/F\rfloor$.
-
-La complessità totale è $O(HW \log F)$ con algoritmi FFT, $O(HW \cdot F)$ con la DCT manuale della Fase 1.
-
-### 2.5 Criterio di Soglia Diagonale
-
-Il troncamento è governato dal parametro $d$ tramite la **maschera booleana** $\mathbf{M} \in \{0,1\}^{F \times F}$:
-
-$$
-M_{k,l} = \begin{cases} 1 & \text{se } k + l < d \\ 0 & \text{altrimenti} \end{cases}
-$$
-
-Il parametro $d \in [0,\, 2F-2]$ è validato dalla GUI. Con $d = 0$ nessun coefficiente è conservato (immagine uniforme); con $d = 2F-2$ viene eliminato solo il coefficiente $(F-1, F-1)$ e la ricostruzione è quasi perfetta. Per $d \leq F$, il numero di coefficienti conservati per blocco è $d(d+1)/2$.
-
-La maschera definisce geometricamente un triangolo nello spazio delle frequenze DCT: la "diagonale di taglio" è la retta $k + l = d$.
-
----
-
-## 3. Fase 1 — Implementazione Manuale e Analisi delle Prestazioni
-
-### 3.1 DCT-II 2D (JPEG-like) e visualizzazione
+### 2.1 DCT-II 2D (JPEG-like) e visualizzazione
 
 Il file `JPEG.py` implementa la pipeline completa di compressione 2D. La DCT-II è implementata manualmente tramite la stessa `calcola_D(N)`, applicata per separabilità: DCT-II 1D su ogni riga, poi su ogni colonna del risultato trasposto.
 
@@ -142,7 +75,7 @@ La funzione `JPEG(img, N, M, grafico, triangolare)` accetta come parametri:
 
 La GUI di visualizzazione è descritta nella Sezione 3.4.
 
-### 3.2 Analisi delle Prestazioni (test.py)
+### 2.2 Analisi delle Prestazioni (test.py)
 
 Il file `test.py` confronta sistematicamente le prestazioni della DCT-II 2D implementata manualmente (`DCT2` in `JPEG.py`) rispetto a `scipy.fftpack.dctn`, variando la dimensione del blocco $N$ su un'immagine casuale $1 \times N \times N$.
 
@@ -165,7 +98,7 @@ I risultati vengono confrontati con le curve teoriche di complessità:
 - SciPy cresce quasi quadraticamente (con il fattore $\log N$ trascurabile per questi valori di $N$).
 - L'errore assoluto medio rimane nell'ordine di $10^{-12}$ - $10^{-13}$, confermando la correttezza numerica dell'implementazione manuale rispetto alla versione ottimizzata.
 
-### 3.3 GUI Fase 1 — ZoomableImageCanvas condiviso
+### 2.3 GUI Fase 1 — ZoomableImageCanvas condiviso
 
 La GUI della Fase 1 (invocata da `JPEG.py` quando `grafico=True`) riusa direttamente il `ZoomableImageCanvas` del package `widgets/` condiviso con la Fase 2. La finestra Tkinter mostra le due immagini (originale e compressa) affiancate con zoom e pan sincronizzati, senza alcuna dipendenza da PyQt6 o dal vecchio package `helper/`.
 
@@ -185,9 +118,9 @@ Il metodo `sync_with` accetta un numero arbitrario di canvas (`*others`), costru
 
 ---
 
-## 4. Fase 2 — Sistema Completo con Analisi DCT
+## 3. Fase 2 — Sistema Completo con Analisi DCT
 
-### 4.1 Architettura del Software
+### 3.1 Architettura del Software
 
 La Fase 2 è un'applicazione Tkinter completa per la compressione interattiva di immagini BMP. I moduli interni sono:
 
@@ -203,7 +136,7 @@ fase2/
 
 I moduli condivisi (`widgets/`, `constants.py`) sono nella root del progetto. Il grafo delle dipendenze è aciclico: `app.py` dipende da tutti i moduli di supporto; `dct_analysis.py` da `dct_compression.py`; i `widgets/` solo da `constants.py` e librerie esterne.
 
-### 4.2 Modulo `dct_compression.py`
+### 3.2 Modulo `dct_compression.py`
 
 Contiene il nucleo algoritmico della Fase 2, basato su SciPy (`scipy.fft.dctn`/`idctn` con `norm='ortho'`):
 
@@ -222,7 +155,7 @@ row_idx, col_idx = np.indices((block_size, block_size))
 mask = (row_idx + col_idx) < threshold_d
 ```
 
-### 4.3 Modulo `dct_analysis.py`
+### 3.3 Modulo `dct_analysis.py`
 
 `build_dct_frequency_map(image, F, d) → (freq_full, freq_trunc)` calcola la media dei valori assoluti dei coefficienti DCT su tutti i blocchi, restituendo due mappe $F \times F$:
 
@@ -231,12 +164,12 @@ mask = (row_idx + col_idx) < threshold_d
 
 Entrambe vengono visualizzate in scala logaritmica $\log(1 + |\text{coeff}|)$ per migliorare la leggibilità del range dinamico.
 
-### 4.4 Modulo `image_utils.py`
+### 3.4 Modulo `image_utils.py`
 
 - `load_grayscale_bmp(path)` — apre il file BMP e converte in modalità `'L'` (8 bit per pixel). Pillow gestisce automaticamente la conversione RGB → grigio
 - `numpy_array_to_pil_image(array)` — converte un array NumPy `uint8` in `PIL.Image` per la visualizzazione nel canvas.
 
-### 4.5 Modulo `gui.py` e `app.py`
+### 3.5 Modulo `gui.py` e `app.py`
 
 **`gui.py`** è l'entry point. Gestisce due modalità via `argparse`:
 
@@ -256,7 +189,7 @@ Aggiunge automaticamente la root del progetto al `sys.path` per permettere l'imp
 - `_on_compress_clicked()` — validazione → worker in thread secondario → aggiornamento UI nel main thread via `root.after(0, callback)`.
 - `_run_in_thread(worker, on_done, on_error)` — esecutore daemon-thread generico; nessun widget Tkinter viene mai toccato dal thread secondario.
 
-### 4.6 Validazione Numerica (`tests.py`)
+### 3.6 Validazione Numerica (`tests.py`)
 
 Due test numerici eseguibili con `python fase2/run.py --test`:
 
@@ -275,9 +208,9 @@ I valori di riferimento corrispondono alla DCT-II senza normalizzazione (`norm=N
 
 ---
 
-## 5. Architettura Condivisa
+## 4. Architettura Condivisa
 
-### 5.1 Struttura del Progetto
+### 4.1 Struttura del Progetto
 
 ```
 secondo/
@@ -304,7 +237,7 @@ secondo/
 
 `JPEG.py` inserisce direttamente la root `secondo/` nel `sys.path` all'avvio, rendendo `widgets/` e `constants.py` accessibili senza launcher esterno. La Fase 2 usa lo stesso meccanismo in `gui.py`.
 
-### 5.2 Package `widgets/`
+### 4.2 Package `widgets/`
 
 **`ZoomableImageCanvas`** (`zoomable_canvas.py`) — estende `tk.Canvas`:
 
@@ -324,7 +257,7 @@ secondo/
 
 **`make_chart_panel`** (`chart_panel.py`) — factory che restituisce `(ttk.LabelFrame, ZoomableChartCanvas)` con il grafico già renderizzato tramite `draw_fn(fig, ax)`.
 
-### 5.3 Modulo `constants.py`
+### 4.3 Modulo `constants.py`
 
 Centralizza tutti i valori configurabili, evitando costanti magiche nel codice:
 
@@ -339,7 +272,7 @@ Centralizza tutti i valori configurabili, evitando costanti magiche nel codice:
 
 ---
 
-## 6. Interfaccia Grafica
+## 5. Interfaccia Grafica
 
 ### Fase 1
 
@@ -381,7 +314,7 @@ Le mappe DCT mostrano la media dei $|\text{coefficienti}|$ in scala logaritmica;
 
 ---
 
-## 7. Tecnologie e Dipendenze
+## 6. Tecnologie e Dipendenze
 
 | Libreria     | Versione minima | Ruolo                                                              |
 | ------------ | --------------- | ------------------------------------------------------------------ |
@@ -400,7 +333,7 @@ Le mappe DCT mostrano la media dei $|\text{coefficienti}|$ in scala logaritmica;
 
 ---
 
-## 8. Conclusioni
+## 7. Conclusioni
 
 Il progetto ha prodotto un sistema completo per la compressione di immagini tramite DCT-II, articolato in due fasi architetturalmente integrate:
 
