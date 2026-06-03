@@ -42,10 +42,7 @@ Il presente lavoro descrive la progettazione e l'implementazione di un sistema s
     - 8.1 [Fase 1 — Prestazioni: implementazione manuale vs SciPy](#81-fase-1--prestazioni-implementazione-manuale-vs-scipy)
     - 8.3 [Fase 2 — Impatto del parametro d (con F = 8)](#83-fase-2--impatto-del-parametro-d-con-f--8)
     - 8.4 [Fase 2 — Impatto del parametro F](#84-fase-2--impatto-del-parametro-f)
-    - 8.5 [Analisi Quantitativa — MSE e PSNR](#85-analisi-quantitativa--mse-e-psnr)
-9. [Discussione](#9-discussione)
-10. [Conclusioni](#10-conclusioni)
-11. [Riferimenti](#11-riferimenti)
+9. [Conclusioni](#9-conclusioni)
 
 ---
 
