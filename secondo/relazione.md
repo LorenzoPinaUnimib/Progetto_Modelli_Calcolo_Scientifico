@@ -1,7 +1,7 @@
 # Compressione di Immagini Digitali tramite Trasformata Discreta del Coseno (DCT-II)
 
-**Corso:** Modelli di Calcolo Scientifico
-**Progetto:** Secondo Assignment — Fase 1 e Fase 2
+**Corso:** Modelli di Calcolo Scientifico  
+**Progetto:** Secondo Assignment — Fase 1 e Fase 2  
 **Anno Accademico:** 2025–2026
 
 ---
@@ -365,7 +365,7 @@ La finestra si ridimensiona liberamente; le immagini si adattano fit-to-canvas a
 L'interfaccia della Fase 2 è organizzata verticalmente con scrollbar, adattandosi a qualsiasi risoluzione.
 
 > ![](/secondo/immagini/gui.png)
-_Screenshot completo della GUI Fase 2: barra di controllo in alto, anteprime affiancate al centro, 4 pannelli grafici in basso._
+> _Screenshot completo della GUI Fase 2: barra di controllo in alto, anteprime affiancate al centro, 4 pannelli grafici in basso._
 
 **Barra di controllo:** bottone selezione BMP, spinbox F ($[1,512]$, default 8) e d ($[0,2F-2]$, default 0), bottone "Comprimi", label di stato durante l'elaborazione.
 
@@ -383,7 +383,7 @@ _Screenshot completo della GUI Fase 2: barra di controllo in alto, anteprime aff
 Le mappe DCT mostrano la media dei $|\text{coefficienti}|$ in scala logaritmica; una linea tratteggiata ciano indica la diagonale di taglio $k+l=d$. Zoom/pan sono sincronizzati per coppia tramite `LinkedChartGroup`.
 
 > ![](/secondo/immagini/istogrammi.png)
-_Pannelli grafici per $F=8$, $d=5$: istogrammi comparativi (in alto) e mappe DCT con diagonale di taglio (in basso)._
+> _Pannelli grafici per $F=8$, $d=5$: istogrammi comparativi (in alto) e mappe DCT con diagonale di taglio (in basso)._
 
 ---
 
