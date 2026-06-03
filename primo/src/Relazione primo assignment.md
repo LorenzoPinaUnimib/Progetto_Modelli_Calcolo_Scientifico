@@ -3,7 +3,18 @@
 **Corso:** Modelli di Calcolo Scientifico  
 **Progetto:** Primo Assignment - alternativo  
 **Anno Accademico:** 2025–2026  
-**URL repo GitHub:** [Progetto_Modelli_Calcolo_Scientifico](https://github.com/LorenzoPinaUnimib/Progetto_Modelli_Calcolo_Scientifico) 
+**URL repo GitHub:** [Progetto_Modelli_Calcolo_Scientifico](https://github.com/LorenzoPinaUnimib/Progetto_Modelli_Calcolo_Scientifico)  
+
+**Progetto svolto da:**  
+_Pina Lorenzo - 894396  
+Piovanelli Michele - 894433  
+Rancati Simone - 900052_  
+
+---
+
+## Utilizzo IA
+
+Nel progetto è stata utilizzata l'IA generativa per la creazione delle interfacce grafiche e per leggere correzioni del codice.
 
 ---
 
