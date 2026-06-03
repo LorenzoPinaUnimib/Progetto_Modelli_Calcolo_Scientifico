@@ -13,51 +13,7 @@ L'applicazione risultante dal lavoro di sviluppo eseguito è dotata di un interf
 
 ---
 
-## 2. Fondamenti Teorici
-
-### 2.1 Metodo di Jacobi
-
-Il metodo di Jacobi è un metodo stazionario di tipo splitting. Dato il sistema $Ax = b$, si decompone $A = D + R$ dove $D$ è la matrice diagonale e $R = L + U$ raccoglie le parti triangolari strettamente inferiore e superiore. L'iterazione si definisce come:
-
-$$x^{(k+1)} = D^{-1}(b - Rx^{(k)})$$
-
-Equivalentemente, ad ogni passo si aggiorna $x^{(k+1)} = x^{(k)} + D^{-1}r^{(k)}$ dove $r^{(k)} = b - Ax^{(k)}$ è il residuo corrente. La convergenza è garantita quando la matrice di iterazione $B_J = -D^{-1}R$ ha raggio spettrale $\rho(B_J) < 1$, condizione soddisfatta, ad esempio, quando $A$ è a dominanza diagonale stretta. Il metodo non richiede che la matrice sia simmetrica o definita positiva, ma è generalmente più lento di Gauß-Seidel.
-
-### 2.2 Metodo di Gauß-Seidel
-
-Gauß-Seidel è una variante di Jacobi che utilizza immediatamente i valori aggiornati durante la stessa iterazione. Lo splitting utilizzato è $A = P + N$ dove $P = D + L$ è la parte triangolare inferiore (inclusa la diagonale). L'iterazione diventa:
-
-$$Px^{(k+1)} = b - Ux^{(k)}$$
-
-La risoluzione del sistema triangolare inferiore viene effettuata in modo efficiente con la tecnica di _forward substitution_. Rispetto a Jacobi, Gauß-Seidel converge tipicamente in meno iterazioni; per matrici simmetriche e definite positive, la convergenza è garantita. La matrice di iterazione associata è $B_{GS} = -(D+L)^{-1}U$.
-
-### 2.3 Metodo del Gradiente
-
-Il metodo del gradiente (o _steepest descent_) è un metodo di discesa applicabile a sistemi con matrice $A$ simmetrica e definita positiva (SPD). Il sistema $Ax = b$ è equivalente alla minimizzazione del funzionale quadratico $\phi(x) = \frac{1}{2}x^TAx - b^Tx$. Ad ogni iterazione si procede nella direzione del residuo (gradiente negativo della funzione costo):
-
-$$x^{(k+1)} = x^{(k)} + \alpha_k r^{(k)}, \qquad \alpha_k = \frac{(r^{(k)})^T r^{(k)}}{(r^{(k)})^T A r^{(k)}}$$
-
-Il passo ottimale $\alpha_k$ minimizza $\phi$ lungo la direzione corrente. La convergenza dipende dal numero di condizionamento $\kappa(A) = \lambda_{\max}/\lambda_{\min}$: per matrici mal condizionate la convergenza può essere molto lenta, poiché le direzioni di ricerca successive tendono a formare angoli piccoli causando un andamento a zig-zag.
-
-### 2.4 Metodo del Gradiente Coniugato
-
-Il gradiente coniugato (CG) supera il limite del metodo del gradiente semplice generando direzioni di ricerca $A$-coniugate, ovvero ortogonali rispetto al prodotto scalare indotto da $A$. L'aggiornamento della direzione introduce un termine correttivo $\beta_k$:
-
-$$d^{(k+1)} = r^{(k+1)} - \beta_k d^{(k)}, \qquad \beta_k = \frac{(d^{(k)})^T A r^{(k+1)}}{(d^{(k)})^T A d^{(k)}}$$
-
-In aritmetica esatta, il CG converge in al più $n$ iterazioni (dove $n$ è la dimensione del sistema), comportandosi come un metodo diretto. In pratica, per matrici SPD ben condizionate, la convergenza avviene in un numero di iterazioni molto inferiore a $n$. Il tasso di convergenza è governato da $\sqrt{\kappa(A)}$ anziché da $\kappa(A)$ come nel gradiente semplice, il che costituisce un vantaggio sostanziale.
-
-### 2.5 Criteri di Arresto
-
-Tutti i metodi implementati adottano un criterio di arresto basato sul residuo relativo in norma infinito:
-
-$$\frac{\|Ax^{(k)} - b\|}{\|b\|} < \text{tol}$$
-
-Il numero massimo di iterazioni è fissato a $n_{\max} = 50000$ per ciascun metodo; nel caso un metodo non riesca a convergere entro questo numero, verrà avvisato l'utente nel log e nella tabella dei risultati.
-
----
-
-## 3. Architettura del Software
+## 2. Architettura del Software
 
 Il progetto è strutturato secondo una separazione netta tra logica di calcolo, gestione dell'input/output e presentazione visiva. La directory principale si articola come segue:
 
@@ -79,14 +35,14 @@ src/
 
 ---
 
-### 3.1 `gui.py` — Entry Point
+### 2.1 `gui.py` — Entry Point
 
 Il file `gui.py` costituisce il punto di ingresso dell'applicazione. Il suo contenuto è volutamente minimale: si limita a impostare il backend grafico di Matplotlib su `TkAgg` e a importare la classe `App` dal sottomodulo `utils.app`.
 Questa separazione tra entry point e logica applicativa segue il principio di singola responsabilità: `gui.py` non contiene alcuna logica di business, delegando interamente la costruzione dell'interfaccia e la gestione degli eventi al modulo dedicato.
 
 ---
 
-### 3.2 `utils/app.py` — Finestra Principale
+### 2.2 `utils/app.py` — Finestra Principale
 
 Il modulo `app.py` definisce la classe `App`, che racchiude tutta la logica dell'interfaccia grafica. Nel costruttore vengono inizializzate le variabili di stato, applicato il tema visivo tramite `ttk.Style`, e costruita la UI con `_build_ui()`.
 
@@ -94,19 +50,19 @@ Il metodo `_run_solvers()` è il cuore della logica di interazione: valida l'inp
 
 ---
 
-### 3.3 `utils/matrix_io.py` — Lettura delle Matrici
+### 2.3 `utils/matrix_io.py` — Lettura delle Matrici
 
 Il modulo `matrix_io.py` espone un'unica funzione pubblica, `load_mtx()`, che accetta il percorso di un file nel formato Matrix Market (`.mtx`) e ne restituisce la matrice corrispondente in formato CSR (_Compressed Sparse Row_). La conversione è effettuata in due passaggi: `scipy.io.mmread()` legge il file e produce una matrice sparsa in formato COO, che viene poi convertita con `csr_matrix()`.
 
 ---
 
-### 3.4 `utils/metrics.py` — Calcolo dell'Errore
+### 2.4 `utils/metrics.py` — Calcolo dell'Errore
 
 Il modulo `metrics.py` contiene la funzione `_compute_relative_error()`, che calcola l'errore relativo tra la soluzione esatta `x_true` e quella calcolata `x_comp` secondo la formula $\epsilon = \|x^* - x^{(k)}\|_2 / \|x^*\|_2$. La funzione gestisce esplicitamente i casi degeneri: se `x_comp` è `None` (solutore fallito) restituisce `NaN`, e se la norma del denominatore è zero evita la divisione restituendo anch'essa `NaN`.
 
 ---
 
-### 3.5 `utils/solvers.py` — Orchestrazione dei Solutori
+### 2.5 `utils/solvers.py` — Orchestrazione dei Solutori
 
 Il modulo `solvers.py` definisce la classe `SolverThread`, che esegue l'intera pipeline di calcolo in background. Il costruttore riceve il percorso della matrice, la tolleranza e le tre callback di comunicazione con la GUI. Il metodo `run()` carica dinamicamente i quattro solutori tramite la funzione privata `_load_solvers()`, costruisce il vettore termine noto $b = A \cdot \mathbf{1}$ e itera sui metodi disponibili.
 
@@ -114,13 +70,13 @@ Per ciascun solutore, `run()` attiva `tracemalloc` prima della chiamata e ne leg
 
 ---
 
-### 3.6 `utils/styles.py` — Stile e Palette
+### 2.6 `utils/styles.py` — Stile e Palette
 
 Il modulo `styles.py` centralizza tutte le costanti visive dell'applicazione: colori della palette (sfondo, pannelli, bordi, accenti, stati di successo/avviso/errore), famiglie e dimensioni dei font (`FONT_MONO`, `FONT_LABEL`, `FONT_TITLE`, `FONT_SMALL`) e il dizionario `METHOD_COLORS` che associa a ciascun solutore un colore identificativo univoco.
 
 ---
 
-### 3.7 `solvers/jacobi.py` — Metodo di Jacobi
+### 2.7 `solvers/jacobi.py` — Metodo di Jacobi
 
 Il modulo implementa il metodo iterativo di Jacobi per la risoluzione di sistemi lineari sparsi. Dopo aver verificato che la matrice sia quadrata e che la diagonale principale non contenga elementi nulli, costruisce la matrice dell'inversa della diagonale come operatore sparso `D_inv = sp.diags(1.0 / D_diag)`. Il ciclo di iterazione aggiorna la soluzione con $x^{(k+1)} = x^{(k)} + D^{-1} r^{(k)}$ e ricalcola il residuo ad ogni passo fino al soddisfacimento del criterio di arresto o al raggiungimento del numero massimo di iterazioni.
 
@@ -128,13 +84,13 @@ Il metodo restituisce la tripla `(x, nit, elapsed_time)`, interfaccia comune a t
 
 ---
 
-### 3.8 `solvers/gauss_seidel.py` — Metodo di Gauss-Seidel
+### 2.8 `solvers/gauss_seidel.py` — Metodo di Gauss-Seidel
 
 Il modulo implementa il metodo di Gauss-Seidel sfruttando la struttura triangolare inferiore della matrice sparsa. Dopo i controlli di validità, estrae la parte triangolare inferiore $P = \text{tril}(A)$ tramite `sp.tril()` in formato CSR. Ad ogni iterazione calcola il residuo $r = b - Ax$ e risolve il sistema triangolare $Py = r$ con `spsolve_triangular()`, aggiornando poi la soluzione come $x \leftarrow x + y$.
 
 ---
 
-### 3.9 `solvers/gradient.py` — Metodo del Gradiente
+### 2.9 `solvers/gradient.py` — Metodo del Gradiente
 
 Il modulo implementa il metodo della discesa del gradiente per sistemi SPD. Prima di avviare l'iterazione esegue tre controlli: quadratezza della matrice, simmetria esatta e definita positività calcolando il minimo autovalore con `scipy.sparse.linalg.eigsh(..., which='SM')`.
 
@@ -142,13 +98,13 @@ Il ciclo iterativo calcola ad ogni passo il residuo $r = b - Ax$, il passo ottim
 
 ---
 
-### 3.10 `solvers/cg.py` — Metodo del Gradiente Coniugato
+### 2.10 `solvers/cg.py` — Metodo del Gradiente Coniugato
 
 Il modulo implementa il metodo del gradiente coniugato, condividendo con `gradient.py` gli stessi tre controlli preliminari. L'iterazione mantiene due vettori ausiliari — il residuo $r$ e la direzione di ricerca $d$ — aggiornati secondo lo schema classico: il passo ottimale è $\alpha_k = d^T r / (d^T A d)$, la soluzione è aggiornata come $x \leftarrow x + \alpha_k d$, il residuo come $r \leftarrow b - Ax$, e infine la nuova direzione è calcolata come $d \leftarrow r - \beta_k d$ con $\beta_k = (d^T A r) / (d^T A d)$.
 
 ---
 
-## 4. Tecnologie e Dipendenze
+## 3. Tecnologie e Dipendenze
 
 Il progetto è implementato interamente in Python e fa uso delle seguenti librerie:
 
@@ -159,7 +115,7 @@ Il progetto è implementato interamente in Python e fa uso delle seguenti librer
 
 ---
 
-## 5. Interfaccia Grafica
+## 4. Interfaccia Grafica
 
 L'interfaccia è composta da due colonne principali. Il pannello sinistro, di larghezza fissa pari a 260 pixel, raccoglie i controlli operativi: una drop-zone cliccabile per la selezione del file `.mtx`, un campo di testo per l'impostazione della tolleranza (valore predefinito `10e-4`), un pulsante di avvio, una barra di progresso indeterminata e un'area di stato testuale. Il pannello destro, espandibile, ospita un `ttk.Notebook` con tre schede:
 
@@ -175,13 +131,13 @@ Il tema grafico adotta una palette scura con sfondo `#0f1117`, pannelli `#181c27
 
 ---
 
-## 6. Esperimenti e Risultati
+## 5. Esperimenti e Risultati
 
 Sono stati eseguiti più run sulle quattro matrici fornite di esempio, con le tolleranze indicate ($10^{-4}$,$10^{-6}$,$10^{-8}$,$10^{-10}$) ed una esecuzione aggiuntiva con tolleranza $10^{-20}$, per stressare il sistema.
 
 ---
 
-### 6.1 spa1.mtx
+### 5.1 spa1.mtx
 
 Per quello che riguarda la matrice `spa1.mtx`, di dimensioni 1000x1000 ed un totale di 182434 elementi non zero (0,18%), possiamo notare un trend di difficoltà nell'esecuzione del metodo del Gradiente, particolarmente accentuata nel provare la tolleranza $10^{-10}$.
 
@@ -191,7 +147,7 @@ Contrariamente, il metodo del Gradiente coniugato fornisce risultati molto più 
 
 ---
 
-### 6.2 spa2.mtx
+### 5.2 spa2.mtx
 
 Per la matrice `spa2.mtx`, di dimensioni 3000x3000 ed un totale di 1633298 elementi non-zero (0.18%), si può osservare un comportamento analogo a quello di `spa1.mtx` per quello che concerne i metodi del gradiente, mentre si nota un miglioramento netto nel metodo di Gauß-Seidel rispetto alla prima.
 
@@ -199,7 +155,7 @@ Per la matrice `spa2.mtx`, di dimensioni 3000x3000 ed un totale di 1633298 eleme
 
 ---
 
-### 6.3 vem1.mtx
+### 5.3 vem1.mtx
 
 Per la matrice `vem1.mtx`, di dimensioni 1681x1681 ed un totale di 13385 elementi non-zero (>0.01%), si ha che Jacobi e Gauß-Seidel sono messi in difficoltà, per quello che riguarda il tempo di esecuzione, suggerendo che sia più favorevole al metodo del gradiente rispetto a `spa1.mtx` e `spa2.mtx`
 
@@ -209,7 +165,7 @@ Inoltre, si nota che il gradiente coniugato sia il migliore di gran lunga per qu
 
 ---
 
-### 6.4 vem2.mtx
+### 5.4 vem2.mtx
 
 Infine, per `vem2.mtx`, di dimensioni 2601x2601 ed un totale di 21225 elementi non-zero (>0.01%), possiamo notare che si ripete un comportamento analogo a `vem1.mtx`.
 
@@ -217,7 +173,7 @@ Infine, per `vem2.mtx`, di dimensioni 2601x2601 ed un totale di 21225 elementi n
 
 ---
 
-### 6.5 Numero di condizionamento
+### 5.5 Numero di condizionamento
 
 Anche se non calcolato nell'applicazione in quanto oneroso, il numero di condizionamento correlato alle matrici, calcolato in maniera differita, permette di spiegare il comportamento relativo al metodo del gradiente per tutte le matrici analizzate:
 
@@ -232,7 +188,7 @@ Inoltre, per il metodo del gradiente, sappiamo che più alto è il numero di con
 
 ---
 
-### 6.6 Analisi sotto tolleranze stringenti
+### 5.6 Analisi sotto tolleranze stringenti
 
 Come menzionato prima, è stato eseguito un giro di test con tolleranza di $10^{-20}$, con i seguenti risultati:
 
@@ -248,7 +204,7 @@ Contrariamente, il metodo di Gauss è consistentemente meno preciso, con la sola
 
 ---
 
-### 6.7 Note aggiuntive sull'utilizzo di memoria
+### 5.7 Note aggiuntive sull'utilizzo di memoria
 
 In aggiunta alle tre metriche richieste dalla consegna, è stata aggiunta anche l'analisi sull'utilizzo della memoria, che rimane sufficientemente consistente con la dimensione delle matrici analizzate:
 
@@ -260,7 +216,7 @@ Risulta quindi possibile utilizzare questa libreria anche per matrici molto più
 
 ---
 
-## 7. Conclusioni
+## 6. Conclusioni
 
 I risultati sperimentali confermano in modo netto la superiorità del metodo del Gradiente Coniugato come solutore general-purpose per sistemi lineari sparsi con matrice simmetrica e definita positiva. Su tutte e quattro le matrici testate, il gradiente coniugato converge in un numero di iterazioni drasticamente inferiore rispetto agli altri metodi e raggiunge gli errori relativi più bassi, indipendentemente dalla tolleranza richiesta. Questo comportamento è coerente con la teoria: la coniugazione delle direzioni di ricerca permette al metodo di non subire il degrado da zig-zag tipico del gradiente semplice, e il tasso di convergenza governato da $\sqrt{\kappa(A)}$​ anziché da $\kappa(A)$ si traduce in un vantaggio concreto e misurabile anche per le matrici più mal condizionate del benchmark.
 
@@ -270,7 +226,7 @@ Dal punto di vista implementativo, il progetto ha dimostrato come sia possibile 
 
 ---
 
-## 8. Riferimenti
+## 7. Riferimenti
 
 1. Appunti del corso: https://elearning.unimib.it/course/view.php?id=62129
 2. SciPy Documentation — `scipy.sparse.linalg`. https://docs.scipy.org/doc/scipy/reference/sparse.linalg.html
