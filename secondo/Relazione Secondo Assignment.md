@@ -52,7 +52,7 @@ Le due fasi condividono il package di widget UI (`widgets/`) e il modulo di cost
 
 ## 2. Fase 1 — Implementazione Manuale e Analisi delle Prestazioni
 
-### 2.1 DCT-II 2D (JPEG-like) e visualizzazione
+### 2.1 DCT-II 2D e visualizzazione
 
 Il file `JPEG.py` implementa la pipeline completa di compressione 2D. La DCT-II è implementata manualmente tramite la stessa `calcola_D(N)`, applicata per separabilità: DCT-II 1D su ogni riga, poi su ogni colonna del risultato trasposto.
 
@@ -191,7 +191,7 @@ Aggiunge automaticamente la root del progetto al `sys.path` per permettere l'imp
 
 ### 3.6 Validazione Numerica (`tests.py`)
 
-Due test numerici eseguibili con `python fase2/run.py --test`:
+Due test numerici eseguibili con `python fase2/gui.py --test`:
 
 **Test 1 — DCT 1D.** Input: $\mathbf{v} = [231, 32, 233, 161, 24, 71, 140, 245]$.
 
@@ -300,12 +300,12 @@ L'interfaccia della Fase 2 è organizzata verticalmente con scrollbar, adattando
 
 **Pannelli grafici — griglia 2×2:**
 
-| Posizione | Contenuto                     | Linkato con |
-| --------- | ----------------------------- | ----------- |
-| [0,0]     | Istogramma immagine originale | [0,1]       |
-| [0,1]     | Istogramma immagine compressa | [0,0]       |
-| [1,0]     | Mappa frequenze DCT originali | [1,1]       |
-| [1,1]     | Mappa frequenze DCT troncate  | [1,0]       |
+| Posizione | Contenuto                     |
+| --------- | ----------------------------- |
+| [0,0]     | Istogramma immagine originale |
+| [0,1]     | Istogramma immagine compressa |
+| [1,0]     | Mappa frequenze DCT originali |
+| [1,1]     | Mappa frequenze DCT troncate  |
 
 Le mappe DCT mostrano la media dei $|\text{coefficienti}|$ in scala logaritmica; una linea tratteggiata ciano indica la diagonale di taglio $k+l=d$. Zoom/pan sono sincronizzati per coppia tramite `LinkedChartGroup`.
 
