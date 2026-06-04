@@ -18,6 +18,35 @@ Nel progetto è stata utilizzata l'IA generativa per la creazione delle interfac
 
 ---
 
+## Indice
+
+1. [Introduzione](#1-introduzione)
+2. [Architettura del Software](#2-architettura-del-software)
+   * 2.1 [`gui.py` — Entry Point](#21-guipy--entry-point)
+   * 2.2 [`utils/app.py` — Finestra Principale](#22-utilsapppy--finestra-principale)
+   * 2.3 [`utils/matrix_io.py` — Lettura delle Matrici](#23-utilsmatrix_iopy--lettura-delle-matrici)
+   * 2.4 [`utils/metrics.py` — Calcolo dell'Errore](#24-utilsmetricspy--calcolo-dellerrore)
+   * 2.5 [`utils/solvers.py` — Orchestrazione dei Solutori](#25-utilssolverspy--orchestrazione-dei-solutori)
+   * 2.6 [`utils/styles.py` — Stile e Palette](#26-utilsstylespy--stile-e-palette)
+   * 2.7 [`solvers/jacobi.py` — Metodo di Jacobi](#27-solversjacobipy--metodo-di-jacobi)
+   * 2.8 [`solvers/gauss_seidel.py` — Metodo di Gauss-Seidel](#28-solversgauss_seidelpy--metodo-di-gauss-seidel)
+   * 2.9 [`solvers/gradient.py` — Metodo del Gradiente](#29-solversgradientpy--metodo-del-gradiente)
+   * 2.10 [`solvers/cg.py` — Metodo del Gradiente Coniugato](#210-solverscgpy--metodo-del-gradiente-coniugato)
+3. [Tecnologie e Dipendenze](#3-tecnologie-e-dipendenze)
+4. [Interfaccia Grafica](#4-interfaccia-grafica)
+5. [Esperimenti e Risultati](#5-esperimenti-e-risultati)
+   * 5.1 [spa1.mtx](#51-spa1mtx)
+   * 5.2 [spa2.mtx](#52-spa2mtx)
+   * 5.3 [vem1.mtx](#53-vem1mtx)
+   * 5.4 [vem2.mtx](#54-vem2mtx)
+   * 5.5 [Numero di condizionamento](#55-numero-di-condizionamento)
+   * 5.6 [Analisi sotto tolleranze stringenti](#56-analisi-sotto-tolleranze-stringenti)
+   * 5.7 [Note aggiuntive sull'utilizzo di memoria](#57-note-aggiuntive-sullutilizzo-di-memoria)
+6. [Conclusioni](#6-conclusioni)
+7. [Riferimenti](#7-riferimenti)
+
+---
+
 ## 1. Introduzione
 
 Il presente elaborato descrive la progettazione e lo sviluppo di una libreria per l'esecuzione di metodi di risoluzione di sistemi lineari di equazioni tramite risolutori iterativi. I metodi in questione sono il **metodo di Jacobi, di Gauß-Seidel, del gradiente e del gradiente coniugato**. Questa viene applicata limitatamente a matrici simmetriche e definite positive.
