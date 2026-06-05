@@ -241,7 +241,7 @@ Inoltre, come precedentemente notato, `spa1.mtx` e `spa2.mtx` presentano diffico
 
 Si nota anche che il metodo di Gauß-Seidel è consistentemente più lento a pari numero di iterazioni rispetto agli altri tre metodi; questo è probabilmente dovuto alla presenza di `spsolve_triangular` all'interno della singola iterazione. In compenso, sembra avere in media una precisione maggiore degli altri metodi.
 
-Contrariamente, il metodo di Gauss è consistentemente meno preciso, con la sola eccezione del metodo del gradiente che è particolarmente mal posto in `spa1.mtx` e `spa2.mtx`.
+Contrariamente, il metodo di Jacobi è consistentemente meno preciso, con la sola eccezione del metodo del gradiente che è particolarmente mal posto in `spa1.mtx` e `spa2.mtx`.
 
 ---
 
